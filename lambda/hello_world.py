@@ -33,7 +33,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
             card_title = "初期設定"
             card_body = "お住いの区を教えてください"
             reprompt = "おすまいの区を教えてください"
-         else:
+        else:
             speak_output = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
             reprompt = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
             card_title = "こんな風に話かけてください"
