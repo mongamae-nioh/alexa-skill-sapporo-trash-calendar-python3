@@ -13,6 +13,7 @@ import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.handler_input import HandlerInput
 
 from ask_sdk_model import Response
+from ask_sdk_model import ui
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,15 +27,27 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-        speak_output = "Welcome, you can say Hello or Help. Which would you like to try?"
+        attr = handler_input.attributes_manager.persistent_attributes
+        if not attr:
+            speak_output = "札幌市のゴミ収集情報をお知らせします。はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
+            card_title = "初期設定"
+            card_body = "お住いの区を教えてください"
+            reprompt = "おすまいの区を教えてください"
+         else:
+            speak_output = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+            reprompt = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+            card_title = "こんな風に話かけてください"
+            card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+
+        handler_input.attributes_manager.session_attributes = attr
 
         return (
             handler_input.response_builder
                 .speak(speak_output)
-                .ask(speak_output)
+                .ask(reprompt)
+                .set_card(ui.StandardCard(title=card_title, text=card_body))
                 .response
         )
-
 
 class HelloWorldIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
