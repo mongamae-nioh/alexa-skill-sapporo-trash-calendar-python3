@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "札幌ごみ",
+            "invocationName": "札幌ごみなげ",
             "intents": [
                 {
                     "name": "AMAZON.CancelIntent",
@@ -313,10 +313,6 @@
                         "違います",
                         "いえ"
                     ]
-                },
-                {
-                    "name": "AMAZON.NavigateHomeIntent",
-                    "samples": []
                 }
             ],
             "types": [

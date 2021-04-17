@@ -11,17 +11,8 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk.standard import StandardSkillBuilder
 
 from ask_sdk_model import Response
-from ask_sdk_model import ui
-
-import boto3
-from boto3.dynamodb.conditions import Key, Attr
-dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
-table = dynamodb.Table('SapporoTrashCalendar')
-
-sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,31 +21,20 @@ class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
+        
         return ask_utils.is_request_type("LaunchRequest")(handler_input)
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-        attr = handler_input.attributes_manager.persistent_attributes
-        if not attr:
-            speak_output = "札幌市のゴミ収集情報をお知らせします。はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
-            card_title = "初期設定"
-            card_body = "お住いの区を教えてください"
-            reprompt = "おすまいの区を教えてください"
-        else:
-            speak_output = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-            reprompt = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-            card_title = "こんな風に話かけてください"
-            card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
-
-        handler_input.attributes_manager.session_attributes = attr
+        speak_output = "Welcome, you can say Hello or Help. Which would you like to try?"
 
         return (
             handler_input.response_builder
                 .speak(speak_output)
-                .ask(reprompt)
-                .set_card(ui.StandardCard(title=card_title, text=card_body))
+                .ask(speak_output)
                 .response
         )
+
 
 class HelloWorldIntentHandler(AbstractRequestHandler):
     """Handler for Hello World Intent."""
