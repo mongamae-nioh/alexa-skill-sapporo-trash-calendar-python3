@@ -11,9 +11,17 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.handler_input import HandlerInput
+from ask_sdk.standard import StandardSkillBuilder
 
 from ask_sdk_model import Response
 from ask_sdk_model import ui
+
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
+table = dynamodb.Table('SapporoTrashCalendar')
+
+sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -22,7 +30,6 @@ class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        
         return ask_utils.is_request_type("LaunchRequest")(handler_input)
 
     def handle(self, handler_input):
