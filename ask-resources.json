@@ -14,8 +14,8 @@
       "skillInfrastructure": {
         "userConfig": {
           "runtime": "python3.6",
-          "handler": "hello_world.handler",
-          "awsRegion": "us-east-1"
+          "handler": "sapporo_trash_calendar_python3.handler",
+          "awsRegion": "ap-northeast-1"
         },
         "type": "@ask-cli/lambda-deployer"
       }
