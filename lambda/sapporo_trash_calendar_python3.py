@@ -19,7 +19,7 @@ table = dynamodb.Table('SapporoTrashCalendar')
 from ask_sdk.standard import StandardSkillBuilder
 sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
-from ward import ComfirmWard
+from ward_calendarnumber import ComfirmWard,CalendarNoInWard
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -55,21 +55,24 @@ def launch_request_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
 def select_ward_intent_handler(handler_input):
-    """Handler for Hello World Intent."""
+    """Handler for select ward Intent."""
     # type: (HandlerInput) -> Response
     slots = handler_input.request_envelope.request.intent.slots
-    ward_is = str(slots['ward'].value)
+    ward_is = slots['ward'].value
+#    synonyms = slots['ward']['resolutions']['resolutionsPerAuthority']['values']['value'].name
+#    synonyms = slots['ward'].resolutions['resolutionsPerAuthority']
+#    synonyms2 = synonyms['resolutions_per_authority']
     attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
-    input_ward = ComfirmWard(ward_is)
+    input_ward = ComfirmWard(str(ward_is))
 
-    if not input_ward.is_exist:
+    if input_ward.is_not_exist:
         speech_text = "お住まいの、区を教えてください"
         
-        return handler_input.response_builder.speak(speech_text).set_card(
-        SimpleCard("initial setting", speech_text)).response
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard("initial setting", speech_text)).set_should_end_session(False).response
     else:
+        session_attr['ward'] = ward_is
         session_attr['ward_name_alpha'] = input_ward.alpha_name
         speech_text = "つづいてカレンダー番号を教えてください。カレンダー番号は札幌市から配布された家庭ごみ収集日のカレンダーか、札幌市のウェブサイトで確認できます"
 
@@ -81,6 +84,33 @@ def select_ward_intent_handler(handler_input):
             .response
         )
 
+
+@sb.request_handler(can_handle_func=is_intent_name("SelectCalendarIntent"))
+def select_calendarno_intent_handler(handler_input):
+    """Handler for select calendar number Intent."""
+    # type: (HandlerInput) -> Response
+    slots = handler_input.request_envelope.request.intent.slots
+    number_is = slots['calendar_number'].value
+    attr = handler_input.attributes_manager.persistent_attributes
+    session_attr = handler_input.attributes_manager.session_attributes
+    ward_is = session_attr['ward']
+    ward = session_attr['ward_name_alpha']
+
+    ward_calendar_number = CalendarNoInWard(ward)
+    
+    if ward_calendar_number.is_not_exist(number_is):
+        speech_text = "そのカレンダー番号はありませんでした。ただしい番号を教えてください"
+
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard("initial setting", speech_text)).set_should_end_session(False).response
+    else:
+        speech_text = f"おすまいは{ward_is}、カレンダー番号は{number_is}番です。よろしいですか?"
+
+        return (
+            handler_input.response_builder
+            .speak(speech_text)
+            .ask(speech_text)
+            .response
+        )
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
