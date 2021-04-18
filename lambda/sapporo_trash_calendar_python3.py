@@ -19,6 +19,8 @@ table = dynamodb.Table('SapporoTrashCalendar')
 from ask_sdk.standard import StandardSkillBuilder
 sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
+from ward import ComfirmWard
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -28,25 +30,56 @@ def launch_request_handler(handler_input):
     # type: (HandlerInput) -> Response
     attr = handler_input.attributes_manager.persistent_attributes
     if not attr:
-        speech_text = 'no attributes'
+        speech_text = "札幌市のゴミ収集情報をお知らせします。はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
+        card_title = "初期設定"
+        card_body = "お住いの区を教えてください"
+        reprompt = "おすまいの区を教えてください"
     else:
-        speech_text = 'welcome'
-#    speech_text = "Welcome to the Alexa Skills Kit, you can say hello!"
+        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        reprompt = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        card_title = "こんな風に話かけてください"
+        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+    
+    # set current values to sesssion attributes
+    #handler_input.attributes_manager.session_attributes = attr
 
-    return handler_input.response_builder.speak(speech_text).set_card(
-        SimpleCard("Hello World", speech_text)).set_should_end_session(
-        False).response
+    return (
+        handler_input.response_builder
+        .speak(speech_text)
+        .ask(reprompt)
+        .set_card(SimpleCard(card_title, card_body))
+        .set_should_end_session(False)
+        .response
+    )
 
 
-@sb.request_handler(can_handle_func=is_intent_name("HelloWorldIntent"))
-def hello_world_intent_handler(handler_input):
+@sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
+def select_ward_intent_handler(handler_input):
     """Handler for Hello World Intent."""
     # type: (HandlerInput) -> Response
-    speech_text = "Hello Python World from Decorators!"
+    slots = handler_input.request_envelope.request.intent.slots
+    ward_is = str(slots['ward'].value)
+    attr = handler_input.attributes_manager.persistent_attributes
+    session_attr = handler_input.attributes_manager.session_attributes
 
-    return handler_input.response_builder.speak(speech_text).set_card(
-        SimpleCard("Hello World", speech_text)).set_should_end_session(
-        True).response
+    input_ward = ComfirmWard(ward_is)
+
+    if not input_ward.is_exist:
+        speech_text = "お住まいの、区を教えてください"
+        
+        return handler_input.response_builder.speak(speech_text).set_card(
+        SimpleCard("initial setting", speech_text)).response
+    else:
+        session_attr['ward_name_alpha'] = input_ward.alpha_name
+        speech_text = "つづいてカレンダー番号を教えてください。カレンダー番号は札幌市から配布された家庭ごみ収集日のカレンダーか、札幌市のウェブサイトで確認できます"
+
+        return (
+            handler_input.response_builder
+            .speak(speech_text)
+            .ask(speech_text)
+            .set_should_end_session(False)
+            .response
+        )
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
