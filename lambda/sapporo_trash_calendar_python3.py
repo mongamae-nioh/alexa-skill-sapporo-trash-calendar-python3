@@ -91,7 +91,6 @@ def select_calendarno_intent_handler(handler_input):
     # type: (HandlerInput) -> Response
     slots = handler_input.request_envelope.request.intent.slots
     number_is = slots['calendar_number'].value
-    attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
     ward_is = session_attr['ward']
     ward = session_attr['ward_name_alpha']
@@ -116,11 +115,13 @@ def select_calendarno_intent_handler(handler_input):
 def help_intent_handler(handler_input):
     """Handler for Help Intent."""
     # type: (HandlerInput) -> Response
-    speech_text = "You can say hello to me!"
+    speech_text = "お住まいの地域の、ゴミの収集情報をお知らせします。たとえば、今日のゴミはなに？もしくは、次の燃えないゴミはいつ？と聞いてください"
+    card_title = "こんな風に話かけてください"
+    card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
 
     return handler_input.response_builder.speak(speech_text).ask(
         speech_text).set_card(SimpleCard(
-            "Hello World", speech_text)).response
+            card_title, card_body)).response
 
 
 @sb.request_handler(
