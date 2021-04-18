@@ -167,7 +167,7 @@ def all_exception_handler(handler_input, exception):
     # type: (HandlerInput, Exception) -> Response
     logger.error(exception, exc_info=True)
 
-    speech = "Sorry, there was some problem. Please try again!!"
+    speech = "すみません、わかりませんでした。もう一度言ってください。"
     handler_input.response_builder.speak(speech).ask(speech)
 
     return handler_input.response_builder.response
