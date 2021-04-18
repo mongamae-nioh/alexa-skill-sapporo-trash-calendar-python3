@@ -131,10 +131,9 @@ def help_intent_handler(handler_input):
 def cancel_and_stop_intent_handler(handler_input):
     """Single handler for Cancel and Stop Intent."""
     # type: (HandlerInput) -> Response
-    speech_text = "Goodbye!"
+    speech_text = "わかりました"
 
-    return handler_input.response_builder.speak(speech_text).set_card(
-        SimpleCard("Hello World", speech_text)).response
+    return handler_input.response_builder.speak(speech_text).response
 
 @sb.request_handler(can_handle_func=is_request_type("SessionEndedRequest"))
 def session_ended_request_handler(handler_input):
