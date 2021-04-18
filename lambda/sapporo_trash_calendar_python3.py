@@ -136,22 +136,6 @@ def cancel_and_stop_intent_handler(handler_input):
     return handler_input.response_builder.speak(speech_text).set_card(
         SimpleCard("Hello World", speech_text)).response
 
-
-@sb.request_handler(can_handle_func=is_intent_name("AMAZON.FallbackIntent"))
-def fallback_handler(handler_input):
-    """AMAZON.FallbackIntent is only available in en-US locale.
-    This handler will not be triggered except in that locale,
-    so it is safe to deploy on any locale.
-    """
-    # type: (HandlerInput) -> Response
-    speech = (
-        "The Hello World skill can't help you with that.  "
-        "You can say hello!!")
-    reprompt = "You can say hello!!"
-    handler_input.response_builder.speak(speech).ask(reprompt)
-    return handler_input.response_builder.response
-
-
 @sb.request_handler(can_handle_func=is_request_type("SessionEndedRequest"))
 def session_ended_request_handler(handler_input):
     """Handler for Session End."""
