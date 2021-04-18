@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "hello world",
+            "invocationName": "札幌ごみ",
             "intents": [
                 {
                     "name": "AMAZON.CancelIntent",
@@ -16,25 +16,652 @@
                     "samples": []
                 },
                 {
-                    "name": "HelloWorldIntent",
-                    "slots": [],
+                    "name": "WhatTrashDayIntent",
+                    "slots": [
+                        {
+                            "name": "when",
+                            "type": "AMAZON.DATE"
+                        }
+                    ],
                     "samples": [
-                        "hello",
-                        "how are you",
-                        "say hi world",
-                        "say hi",
-                        "hi",
-                        "say hello world",
-                        "say hello"
+                        "{when} のごみを教えて",
+                        "で {when} のごみを教えて",
+                        "で {when} をしりたい",
+                        "で {when} を知りたい",
+                        "で {when} をおしえて",
+                        "で {when} を教えて",
+                        "で {when} なに",
+                        "{when} をしりたい",
+                        "{when} を知りたい",
+                        "{when} をおしえて",
+                        "{when} を教えて",
+                        "{when} なに",
+                        "{when} は",
+                        "{when} のゴミはなに",
+                        "{when} はどのゴミだろう",
+                        "{when} はどのゴミかな",
+                        "{when} はなんのゴミだっけ",
+                        "{when} はどのゴミだったっけ",
+                        "{when} はどのゴミだっけ",
+                        "{when} はどのゴミの日",
+                        "{when} はどのゴミ",
+                        "{when} はなんのゴミの日",
+                        "{when} はなんのゴミ",
+                        "{when} のゴミ忘れた",
+                        "{when} のゴミ忘れちゃった",
+                        "{when} のゴミ知りたい",
+                        "{when} のゴミ",
+                        "{when} のゴミは",
+                        "{when} のゴミはなんだったっけ",
+                        "{when} のゴミはなんだろう",
+                        "{when} のゴミはなんだっけ",
+                        "{when} のゴミは何かな",
+                        "{when} のゴミをしりたい",
+                        "{when} のゴミはなにかな",
+                        "{when} のゴミはなにか教えて",
+                        "{when} のゴミはなにかおしえて",
+                        "{when} のゴミは何か教えて",
+                        "{when} のゴミは何かおしえて",
+                        "{when} のごみはなにかな",
+                        "{when} のごみはなにか教えて",
+                        "{when} のごみはなにかおしえて",
+                        "{when} のごみは何か教えて",
+                        "{when} のごみは何かおしえて",
+                        "{when} ",
+                        "{when} のごみはなに",
+                        "{when} はどのごみだろう",
+                        "{when} はどのごみかな",
+                        "{when} はなんのごみだっけ",
+                        "{when} はどのごみだったっけ",
+                        "{when} はどのごみだっけ",
+                        "{when} はどのごみの日",
+                        "{when} はどのごみ",
+                        "{when} はなんのごみの日",
+                        "{when} はなんのごみ",
+                        "{when} のごみ忘れた",
+                        "{when} のごみ忘れちゃった",
+                        "{when} のごみ知りたい",
+                        "{when} のごみ",
+                        "{when} のごみは",
+                        "{when} のごみはなんだったっけ",
+                        "{when} のごみはなんだろう",
+                        "{when} のごみはなんだっけ",
+                        "{when} のごみは何かな",
+                        "{when} のごみをしりたい",
+                        "{when} は何",
+                        "{when} 何",
+                        "{when} は何かな",
+                        "で {when} のゴミはなに",
+                        "で {when} はどのゴミだろう",
+                        "で {when} はどのゴミかな",
+                        "で {when} はなんのゴミだっけ",
+                        "で {when} はどのゴミだったっけ",
+                        "で {when} はどのゴミだっけ",
+                        "で {when} はどのゴミの日",
+                        "で {when} はどのゴミ",
+                        "で {when} はなんのゴミの日",
+                        "で {when} はなんのゴミ",
+                        "で {when} のゴミ忘れた",
+                        "で {when} のゴミ忘れちゃった",
+                        "で {when} のゴミ知りたい",
+                        "で {when} のゴミ",
+                        "で {when} のゴミは",
+                        "で {when} のゴミはなんだったっけ",
+                        "で {when} のゴミはなんだろう",
+                        "で {when} のゴミはなんだっけ",
+                        "で {when} のゴミは何かな",
+                        "で {when} のゴミをしりたい",
+                        "で {when} のゴミはなにかな",
+                        "で {when} のゴミはなにか教えて",
+                        "で {when} のゴミはなにかおしえて",
+                        "で {when} のゴミは何か教えて",
+                        "で {when} のゴミは何かおしえて",
+                        "で {when} のごみはなにかな",
+                        "で {when} のごみはなにか教えて",
+                        "で {when} のごみはなにかおしえて",
+                        "で {when} のごみは何か教えて",
+                        "で {when} のごみは何かおしえて",
+                        "で {when} ",
+                        "で {when} のごみはなに",
+                        "で {when} はどのごみかな",
+                        "で {when} はなんのごみだっけ",
+                        "で {when} はどのごみだったっけ",
+                        "で {when} はどのごみだっけ",
+                        "で {when} はどのごみの日",
+                        "で {when} はどのごみ",
+                        "で {when} はなんのごみの日",
+                        "で {when} はなんのごみ",
+                        "で {when} のごみ忘れた",
+                        "で {when} のごみ忘れちゃった",
+                        "で {when} のごみ知りたい",
+                        "で {when} のごみ",
+                        "で {when} のごみは",
+                        "で {when} のごみはなんだったっけ",
+                        "で {when} のごみはなんだろう",
+                        "で {when} のごみはなんだっけ",
+                        "で {when} のごみは何かな",
+                        "で {when} のごみをしりたい",
+                        "で {when} は何",
+                        "で {when} 何",
+                        "で {when} は何かな"
                     ]
                 },
                 {
-                    "name": "AMAZON.NavigateHomeIntent",
-                    "samples": []
+                    "name": "NextWhenTrashDayIntent",
+                    "slots": [
+                        {
+                            "name": "trash",
+                            "type": "trash"
+                        }
+                    ],
+                    "samples": [
+                        "次の {trash} は何日",
+                        "次の {trash} は",
+                        "次の {trash}",
+                        "次の {trash} はいつか教えて",
+                        "次の {trash} はいつ",
+                        "つぎの {trash}",
+                        "今度の {trash} をしりたい",
+                        "今度の {trash} は",
+                        "今後の {trash} は",
+                        "今度の {trash} がいつか教えて",
+                        "今度の {trash} の日付をおしえて",
+                        "今度の {trash} はいつか教えて",
+                        "今度の {trash} を教えて",
+                        "今度の {trash} はいつだろう",
+                        "今度の {trash} はいつ",
+                        "つぎの {trash} はいつかな",
+                        "つぎの {trash} は",
+                        "つぎの {trash} は何日",
+                        "つぎの {trash} はいつか教えて",
+                        "つぎの {trash} を教えて",
+                        "つぎの {trash} はいつだっけ",
+                        "つぎの {trash} はいつ",
+                        "{trash} のつぎは",
+                        "{trash} はいつだっけ",
+                        "{trash} はいつ",
+                        "{trash}",
+                        "{trash} は次いつですか",
+                        "{trash} は次いつなの",
+                        "{trash} は次いつだろう",
+                        "{trash} は次いつかな",
+                        "{trash} の次は",
+                        "{trash} は次いつだっけ",
+                        "{trash} は次いつ",
+                        "{trash} の次はいつだっけ",
+                        "{trash} の次はいつ",
+                        "{trash} は",
+                        "で次の {trash} は何日",
+                        "で次の {trash} は",
+                        "で次の {trash}",
+                        "で次の {trash} はいつか教えて",
+                        "で次の {trash} はいつ",
+                        "でつぎの {trash}",
+                        "で今度の {trash} をしりたい",
+                        "で今度の {trash} は",
+                        "で今後の {trash} は",
+                        "で今度の {trash} がいつか教えて",
+                        "で今度の {trash} の日付をおしえて",
+                        "で今度の {trash} はいつか教えて",
+                        "で今度の {trash} を教えて",
+                        "で今度の {trash} はいつだろう",
+                        "で今度の {trash} はいつ",
+                        "でつぎの {trash} はいつかな",
+                        "でつぎの {trash} は",
+                        "でつぎの {trash} は何日",
+                        "でつぎの {trash} はいつか教えて",
+                        "でつぎの {trash} を教えて",
+                        "でつぎの {trash} はいつだっけ",
+                        "でつぎの {trash} はいつ",
+                        "で {trash} のつぎは",
+                        "で {trash} はいつだっけ",
+                        "で {trash} はいつ",
+                        "で {trash}",
+                        "で {trash} は次いつですか",
+                        "で {trash} は次いつなの",
+                        "で {trash} は次いつだろう",
+                        "で {trash} は次いつかな",
+                        "で {trash} の次は",
+                        "で {trash} は次いつだっけ",
+                        "で {trash} は次いつ",
+                        "で {trash} の次はいつだっけ",
+                        "で {trash} の次はいつ",
+                        "で {trash} は",
+                        "でつぎの {trash} がいつか教えて",
+                        "で次の {trash} がいつか教えて",
+                        "でつぎの {trash} はいつですか",
+                        "で次の {trash} はいつですか",
+                        "つぎの {trash} がいつか教えて",
+                        "次の {trash} がいつか教えて",
+                        "つぎの {trash} はいつですか",
+                        "次の {trash} はいつですか"
+                    ]
+                },
+                {
+                    "name": "SelectWardIntent",
+                    "slots": [
+                        {
+                            "name": "ward",
+                            "type": "ward"
+                        }
+                    ],
+                    "samples": [
+                        "{ward} みたい",
+                        "{ward} ですよ",
+                        "{ward} なの",
+                        "{ward} 在住です",
+                        "{ward} 住みです",
+                        "{ward} かな",
+                        "{ward} にいます",
+                        "{ward} だよ",
+                        "{ward} に住んでいます",
+                        "{ward} です",
+                        "{ward} "
+                    ]
+                },
+                {
+                    "name": "SelectCalendarIntent",
+                    "slots": [
+                        {
+                            "name": "calendar_number",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "カレンダーは {calendar_number} 番です",
+                        "カレンダーは {calendar_number}",
+                        "カレンダー {calendar_number} 番",
+                        "{calendar_number} 番",
+                        "{calendar_number} かな",
+                        "{calendar_number} ばんです",
+                        "カレンダー番号 {calendar_number}",
+                        "番号は {calendar_number}",
+                        "カレンダー番号は {calendar_number} です",
+                        "番号は {calendar_number} です",
+                        "{calendar_number} 番です",
+                        "{calendar_number} だよ",
+                        "{calendar_number} です",
+                        "{calendar_number} "
+                    ]
+                },
+                {
+                    "name": "AMAZON.YesIntent",
+                    "samples": [
+                        "いいです",
+                        "いいよ",
+                        "そうです",
+                        "OKです",
+                        "OK",
+                        "はい",
+                        "うん"
+                    ]
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": [
+                        "ノーです",
+                        "ノー",
+                        "いいえ",
+                        "いや",
+                        "おかしい",
+                        "間違ってる",
+                        "間違った",
+                        "間違い",
+                        "間違っている",
+                        "そうじゃない",
+                        "違う",
+                        "違います",
+                        "いえ"
+                    ]
                 }
             ],
-            "types": []
+            "types": [
+                {
+                    "name": "ward",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "白石"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "豊平"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "手稲"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "清田"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "厚別"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "中央"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "西"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "東"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "南"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "北"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "厚別区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "手稲区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "清田区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "豊平区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "白石区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "東区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "西区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "南区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "北区"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "中央区"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "trash",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "燃やせないごみ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃えるごみ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃えないごみ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "枝葉"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "葉っぱ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "箱"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "レシート"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "模造紙"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "包装紙"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "アルミ缶"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "スチール缶"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "空き缶"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "発泡スチロール"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "発泡"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "プラゴミ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃やせる"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "ライター"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "ペット"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "ペットボトル"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "缶"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "びん"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "草"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "葉"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "枝"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "紙類"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "雑がみ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "紙"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "乾電池"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "電池"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "プラ容器"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "プラスティック"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "プラスチック"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "プラ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "ガスボンベ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "カセットボンベ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "スプレー"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "スプレー缶"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃やせるゴミ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃やせないゴミ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃やせない"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "不燃物"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃えないゴミ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃えない"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "可燃物"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "可燃"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃えるゴミ"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "燃える"
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     }
-  }
-  
+}
