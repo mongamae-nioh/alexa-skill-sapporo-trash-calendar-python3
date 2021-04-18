@@ -65,6 +65,14 @@ def select_ward_intent_handler(handler_input):
     attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
+    if 'ward_calno' in attr:
+        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        card_title = "こんな風に話かけてください"
+        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+            
+        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
+        return handler_input.response_builder.response
+
     input_ward = ComfirmWard(str(ward_is))
 
     if input_ward.is_not_exist:
@@ -91,18 +99,28 @@ def select_calendarno_intent_handler(handler_input):
     # type: (HandlerInput) -> Response
     slots = handler_input.request_envelope.request.intent.slots
     number_is = slots['calendar_number'].value
+    attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
-    ward_is = session_attr['ward']
-    ward = session_attr['ward_name_alpha']
+    ward_kanji = session_attr['ward']
+    ward_alpha = session_attr['ward_name_alpha']
 
-    ward_calendar_number = CalendarNoInWard(ward)
+    if 'ward_calno' in attr:
+        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        card_title = "こんな風に話かけてください"
+        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+            
+        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
+        return handler_input.response_builder.response
+
+    ward_calendar_number = CalendarNoInWard(ward_alpha)
     
     if ward_calendar_number.is_not_exist(number_is):
         speech_text = "そのカレンダー番号はありませんでした。ただしい番号を教えてください"
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard("initial setting", speech_text)).set_should_end_session(False).response
     else:
-        speech_text = f"おすまいは{ward_is}、カレンダー番号は{number_is}番です。よろしいですか?"
+        speech_text = f"おすまいは{ward_kanji}、カレンダー番号は{number_is}番です。よろしいですか?"
+        session_attr['ward_calno'] = ward_alpha + "-" + number_is
 
         return (
             handler_input.response_builder
@@ -110,6 +128,14 @@ def select_calendarno_intent_handler(handler_input):
             .ask(speech_text)
             .response
         )
+
+
+@sb.request_handler(can_handle_func=is_intent_name("AMAZON.YesIntent"))
+def help_intent_handler(handler_input):
+    """Handler for Yes Intent."""
+    # type: (HandlerInput) -> Response
+
+
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
