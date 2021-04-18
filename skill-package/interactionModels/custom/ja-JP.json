@@ -313,6 +313,10 @@
                         "違います",
                         "いえ"
                     ]
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
                 }
             ],
             "types": [
@@ -321,102 +325,82 @@
                     "values": [
                         {
                             "name": {
-                                "value": "白石"
+                                "value": "厚別区",
+                                "synonyms": [
+                                    "厚別"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "豊平"
+                                "value": "手稲区",
+                                "synonyms": [
+                                    "手稲"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "手稲"
+                                "value": "清田区",
+                                "synonyms": [
+                                    "清田"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "清田"
+                                "value": "豊平区",
+                                "synonyms": [
+                                    "豊平"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "厚別"
+                                "value": "白石区",
+                                "synonyms": [
+                                    "白石"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "中央"
+                                "value": "東区",
+                                "synonyms": [
+                                    "東"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "西"
+                                "value": "西区",
+                                "synonyms": [
+                                    "西"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "東"
+                                "value": "南区",
+                                "synonyms": [
+                                    "南"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "南"
+                                "value": "北区",
+                                "synonyms": [
+                                    "北"
+                                ]
                             }
                         },
                         {
                             "name": {
-                                "value": "北"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "厚別区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "手稲区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "清田区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "豊平区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "白石区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "東区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "西区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "南区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "北区"
-                            }
-                        },
-                        {
-                            "name": {
-                                "value": "中央区"
+                                "value": "中央区",
+                                "synonyms": [
+                                    "中央"
+                                ]
                             }
                         }
                     ]
