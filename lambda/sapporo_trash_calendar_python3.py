@@ -35,7 +35,6 @@ def launch_request_handler(handler_input):
         card_body = "お住いの区を教えてください"
         reprompt = "おすまいの区を教えてください"
     else:
-        print(attr)
         speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
         reprompt = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
         card_title = "こんな風に話かけてください"
@@ -154,11 +153,41 @@ def yes_intent_handler(handler_input):
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
     else:
-        speech_text = "初期設定を完了してください。もう一度おすまいの区を教えてください"
+        speech_text = "初期設定を行います。お住いの区を教えてください"
         card_title = "初期設定"
         card_body = "お住いの区を教えてください"
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+
+
+@sb.request_handler(can_handle_func=is_intent_name("AMAZON.NoIntent"))
+def yes_intent_handler(handler_input):
+    """Handler for No Intent."""
+    # type: (HandlerInput) -> Response
+    attr = handler_input.attributes_manager.persistent_attributes
+    session_attr = handler_input.attributes_manager.session_attributes
+
+    if session_attr['ward_calno'] in attr:
+        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        card_title = "こんな風に話かけてください"
+        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+
+    if not attr:
+        session_attr['ward'] = ''
+        session_attr['ward_name_alpha'] = ''
+        session_attr['ward_calno'] = ''
+        speech_text = "初期設定を行います。お住いの区を教えてください"
+        card_title = "初期設定"
+        card_body = "お住いの区を教えてください"
+        reprompt = "おすまいの区を教えてください"
+
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+    else:
+        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
+
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
