@@ -11,6 +11,7 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
 
+import data
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
@@ -20,6 +21,8 @@ from ask_sdk.standard import StandardSkillBuilder
 sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
 from ward_calendarnumber import ComfirmWard,CalendarNoInWard
+
+from trashtype import check
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -188,6 +191,37 @@ def yes_intent_handler(handler_input):
         speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
         return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
 
+
+@sb.request_handler(can_handle_func=is_intent_name("WhatTrashDayIntent"))
+def help_intent_handler(handler_input):
+    """Handler for what trash day Intent."""
+    slots = handler_input.request_envelope.request.intent.slots
+    date = slots['when'].value
+    attr = handler_input.attributes_manager.persistent_attributes
+    slicemonth = date[5:7]
+    sliceday = date[8:10]
+    monthday = str(slicemonth) + "月" + str(sliceday) + "日"    
+
+    if not attr:
+        speech_text = "はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
+        card_title = "初期設定"
+        card_body = "お住いの区を教えてください"
+        reprompt = "おすまいの区を教えてください"
+            
+        handler_input.response_builder.speak(speech_text).ask(reprompt).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
+        return handler_input.response_builder.response
+
+    if attr['ward_calno'] is not None:
+        response = table.query(
+            KeyConditionExpression=Key('Date').eq(date) & Key('WardCalNo').eq(attr['ward_calno'])
+        )
+
+        TrashNo = response['Items'][0]['TrashNo']
+        trashname = check(TrashNo)        
+        speech_text = f"{trashname}の日です。"
+
+        handler_input.response_builder.speak(speech_text).ask(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True)
+        return handler_input.response_builder.response
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
