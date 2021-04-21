@@ -23,6 +23,7 @@ sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 from ward_calendarnumber import ComfirmWard,CalendarNoInWard
 
 from trashtype import typecheck
+from trashnumber import numbercheck
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -220,8 +221,32 @@ def help_intent_handler(handler_input):
         trashname = typecheck(TrashNo)        
         speech_text = f"{trashname}の日です。"
 
-        handler_input.response_builder.speak(speech_text).ask(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True)
+        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True)
         return handler_input.response_builder.response
+
+@sb.request_handler(can_handle_func=is_intent_name("NextWhenTrashDayIntent"))
+def help_intent_handler(handler_input):
+    """Handler for next when trash day Intent."""
+    slots = handler_input.request_envelope.request.intent.slots
+    trashname = slots['trash'].value
+    attr = handler_input.attributes_manager.persistent_attributes
+
+    if not attr:
+        speech_text = "はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
+        card_title = "初期設定"
+        card_body = "お住いの区を教えてください"
+        reprompt = "おすまいの区を教えてください"
+            
+        handler_input.response_builder.speak(speech_text).ask(reprompt).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
+        return handler_input.response_builder.response
+
+    if attr['ward_calno'] is not None:
+        trashnumber = numbercheck(trashname)
+        
+        response = table.query(
+            KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
+            FilterExpression=Attr('TrashNo').eq(trashnumber))
+        
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
