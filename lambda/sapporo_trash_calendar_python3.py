@@ -11,7 +11,7 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
 
-import data
+import datetime
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
