@@ -8,5 +8,5 @@ trashtype = {
     7: "収集なし"
 }
 
-def checktype(typenumber) -> str:
+def typecheck(typenumber) -> str:
     return trashtype[typenumber]
