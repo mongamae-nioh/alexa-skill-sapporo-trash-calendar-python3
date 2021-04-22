@@ -54,3 +54,15 @@ correspondence_table = {
 
 def numbercheck(trashname) -> str:
     return correspondence_table[trashname]
+
+convert_dict = {
+    1: "燃やせるごみ、スプレー缶類",
+    2: "燃やせないごみ、乾電池、ライター",
+    3: "容器プラ",
+    4: "びん、缶、ペット'",
+    5: "雑がみ",
+    6: "枝、葉、くさ",
+}
+
+def trashname(number) -> str:
+    return convert_dict[number]
