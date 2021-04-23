@@ -32,6 +32,8 @@ import json
 json_open = open('./messages/messages.json', 'r')
 msg = json.load(json_open)
 
+from speech_builder import generate_speech
+
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
     """Handler for Skill Launch."""
@@ -49,13 +51,15 @@ def launch_request_handler(handler_input):
     # set current values to sesssion attributes
     #handler_input.attributes_manager.session_attributes = attr
 
+#    return generate_speech(handler_input, text, card_title, card_body, 'no')
+
     return (
-        handler_input.response_builder
-        .speak(text)
+        handler_input.response_builder.speak(text)
         .set_card(SimpleCard(card_title, card_body))
         .set_should_end_session(False)
         .response
     )
+    
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
 def select_ward_intent_handler(handler_input):
