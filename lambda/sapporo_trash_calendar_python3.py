@@ -245,8 +245,12 @@ def help_intent_handler(handler_input):
         )
 
         TrashNo = response['Items'][0]['TrashNo']
-        trashname = trashinfo.return_trash_type(TrashNo)        
-        speech_text = f"{trashname}の日です。"
+        trashname = trashinfo.return_trash_type(TrashNo)
+        
+        if TrashNo == 0:
+            speech_text = '本日、収集はありません。'
+        else:
+            speech_text = f"{trashname}の日です。"
 
         handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True)
         return handler_input.response_builder.response
