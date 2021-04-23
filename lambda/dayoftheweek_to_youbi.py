@@ -1,5 +1,3 @@
-import datetime.datetime
-
 correspondence_table = {
     "Sunday": "日曜日",
     "Monday": "月曜日",
@@ -10,5 +8,5 @@ correspondence_table = {
     "Saturday": "土曜日"
 }
 
-
-
+def convert(engish) -> str:
+    return correspondence_table[engish]

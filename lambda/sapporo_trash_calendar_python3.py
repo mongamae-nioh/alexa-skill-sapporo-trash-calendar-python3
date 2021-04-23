@@ -23,6 +23,7 @@ sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 from ward_calendarnumber import ComfirmWard,CalendarNoInWard
 
 import trashinfo
+import dayoftheweek_to_youbi
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -80,8 +81,9 @@ def select_ward_intent_handler(handler_input):
 
     if input_ward.is_not_exist:
         speech_text = "お住まいの、区を教えてください"
-        
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard("initial setting", speech_text)).set_should_end_session(False).response
+        card_title = "初期設定"
+
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, speech_text)).set_should_end_session(False).response
     else:
         session_attr['ward'] = ward_is
         session_attr['ward_name_alpha'] = input_ward.alpha_name
@@ -198,9 +200,9 @@ def help_intent_handler(handler_input):
     slots = handler_input.request_envelope.request.intent.slots
     date = slots['when'].value
     attr = handler_input.attributes_manager.persistent_attributes
-    slicemonth = date[5:7]
-    sliceday = date[8:10]
-    monthday = str(slicemonth) + "月" + str(sliceday) + "日"    
+    month = date[5:7]
+    day = date[8:10]
+    monthday = str(month) + "月" + str(day) + "日"    
 
     if not attr:
         speech_text = "はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
@@ -240,12 +242,26 @@ def help_intent_handler(handler_input):
         return handler_input.response_builder.response
 
     if attr['ward_calno'] is not None:
-        trashnumber = numbercheck(trashname)
+        trashnumber = trashinfo.return_trash_number(trashname)
         
         response = table.query(
             KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
             FilterExpression=Attr('TrashNo').eq(trashnumber))
         
+        when = response['Items'][0]['Date']
+        month = when[5:7]
+        day = when[8:10]
+        monthday = str(month) + "月" + str(day) + "日"
+
+        date = datetime.datetime.strptime(when, '%Y-%m-%d')
+        dayoftheweek = date.strftime("%A")
+        youbi = dayoftheweek_to_youbi.convert(dayoftheweek)
+        official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
+
+        speech_text = f"次の{official_trash_name}は、{monthday}、{youbi}です。"
+
+        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(True)
+        return handler_input.response_builder.response
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
