@@ -28,34 +28,34 @@ import dayoftheweek_to_youbi
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+import json
+json_open = open('./messages/messages.json', 'r')
+msg = json.load(json_open)
+
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
     """Handler for Skill Launch."""
     # type: (HandlerInput) -> Response
     attr = handler_input.attributes_manager.persistent_attributes
     if not attr:
-        speech_text = "札幌市のゴミ収集情報をお知らせします。はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
-        card_title = "初期設定"
-        card_body = "お住いの区を教えてください"
-        reprompt = "おすまいの区を教えてください"
+        text = msg['text']['1']
+        card_title = msg['card_title']['1']
+        card_body =  msg['card_body']['1']
     else:
-        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        reprompt = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        card_title = "こんな風に話かけてください"
-        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+        text = msg['text']['2']
+        card_title = msg['card_title']['2']
+        card_body = msg['card_body']['2']
     
     # set current values to sesssion attributes
     #handler_input.attributes_manager.session_attributes = attr
 
     return (
         handler_input.response_builder
-        .speak(speech_text)
-        .ask(reprompt)
+        .speak(text)
         .set_card(SimpleCard(card_title, card_body))
         .set_should_end_session(False)
         .response
     )
-
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
 def select_ward_intent_handler(handler_input):
@@ -70,29 +70,40 @@ def select_ward_intent_handler(handler_input):
     session_attr = handler_input.attributes_manager.session_attributes
 
     if 'ward_calno' in attr:
-        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        card_title = "こんな風に話かけてください"
-        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+        text = msg['text']['2']
+        card_title = msg['card_title']['2']
+        card_body = msg['card_body']['2']
             
-        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
-        return handler_input.response_builder.response
+        return (
+            handler_input.response_builder
+            .speak(text)
+            .set_card(SimpleCard(card_title, card_body))
+            .set_should_end_session(False)
+            .response
+        )
 
     input_ward = ComfirmWard(str(ward_is))
 
     if input_ward.is_not_exist:
-        speech_text = "お住まいの、区を教えてください"
-        card_title = "初期設定"
-
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, speech_text)).set_should_end_session(False).response
-    else:
-        session_attr['ward'] = ward_is
-        session_attr['ward_name_alpha'] = input_ward.alpha_name
-        speech_text = "つづいてカレンダー番号を教えてください。カレンダー番号は札幌市から配布された家庭ごみ収集日のカレンダーか、札幌市のウェブサイトで確認できます"
+        text = msg['text']['3']
+        card_title = msg['card_title']['1']
 
         return (
             handler_input.response_builder
-            .speak(speech_text)
-            .ask(speech_text)
+            .speak(text)
+            .set_card(SimpleCard(card_title, text))
+            .set_should_end_session(False)
+            .response
+        )
+    else:
+        session_attr['ward'] = ward_is
+        session_attr['ward_name_alpha'] = input_ward.alpha_name
+        text = msg['text']['4']
+
+        return (
+            handler_input.response_builder
+            .speak(text)
+            .ask(text)
             .set_should_end_session(False)
             .response
         )
@@ -110,18 +121,31 @@ def select_calendarno_intent_handler(handler_input):
     ward_alpha = session_attr['ward_name_alpha']
 
     if 'ward_calno' in attr:
-        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        card_title = "こんな風に話かけてください"
-        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+        text = msg['text']['2']
+        card_title = msg['card_title']['2']
+        card_body = msg['card_body']['2']
             
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+        return (
+            handler_input.response_builder
+            .speak(text)
+            .ask(text)
+            .set_should_end_session(False)
+            .response
+        )
 
     ward_calendar_number = CalendarNoInWard(ward_alpha)
     
     if ward_calendar_number.is_not_exist(number_is):
-        speech_text = "そのカレンダー番号はありませんでした。ただしい番号を教えてください"
+        text = msg['err']['1']
+        card_title = msg['card_title']['1']
 
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard("initial setting", speech_text)).set_should_end_session(False).response
+        return (
+            handler_input.response_builder
+            .speak(text)
+            .set_card(SimpleCard(card_title, text))
+            .set_should_end_session(False)
+            .response
+        )
     else:
         speech_text = f"おすまいは{ward_kanji}、カレンダー番号は{number_is}番です。よろしいですか?"
         session_attr['ward_calno'] = ward_alpha + "-" + number_is
@@ -142,15 +166,15 @@ def yes_intent_handler(handler_input):
     session_attr = handler_input.attributes_manager.session_attributes
 
     if 'ward_calno' in attr:
-        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        card_title = "こんな風に話かけてください"
-        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+        speech_text = msg['text']['2']
+        card_title = msg['card_title']['2']
+        card_body = msg['card_body']['2']
             
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
     if session_attr['ward_calno']:
-        speech_text = "初期設定が完了しました。今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        card_title = "こんな風に話かけてください"
-        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+        speech_text = msg['text']['5']
+        card_title = msg['card_title']['2']
+        card_body = msg['card_body']['2']
             
         # セッション情報をpersistentへ書き込み
         handler_input.attributes_manager.persistent_attributes = session_attr
@@ -158,9 +182,9 @@ def yes_intent_handler(handler_input):
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
     else:
-        speech_text = "初期設定を行います。お住いの区を教えてください"
-        card_title = "初期設定"
-        card_body = "お住いの区を教えてください"
+        speech_text = msg['text']['1']
+        card_title = msg['card_title']['1']
+        card_body = msg['card_body']['1']
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
 
@@ -173,9 +197,9 @@ def yes_intent_handler(handler_input):
     session_attr = handler_input.attributes_manager.session_attributes
 
     if session_attr['ward_calno'] in attr:
-        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
-        card_title = "こんな風に話かけてください"
-        card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+        speech_text = msg['text']['2']
+        card_title = msg['card_title']['2']
+        card_body = msg['card_body']['2']
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
 
@@ -183,14 +207,13 @@ def yes_intent_handler(handler_input):
         session_attr['ward'] = ''
         session_attr['ward_name_alpha'] = ''
         session_attr['ward_calno'] = ''
-        speech_text = "初期設定を行います。お住いの区を教えてください"
-        card_title = "初期設定"
-        card_body = "お住いの区を教えてください"
-        reprompt = "おすまいの区を教えてください"
+        speech_text = msg['text']['1']
+        card_title = msg['card_title']['1']
+        card_body = msg['card_body']['1']
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
     else:
-        speech_text = "今日以降で何のゴミか知りたい日、または、出したいゴミの種類、どちらかを教えてください"
+        speech_text = msg['text']['2']
         return handler_input.response_builder.speak(speech_text).set_should_end_session(False).response
 
 
@@ -205,12 +228,11 @@ def help_intent_handler(handler_input):
     monthday = str(month) + "月" + str(day) + "日"    
 
     if not attr:
-        speech_text = "はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
-        card_title = "初期設定"
-        card_body = "お住いの区を教えてください"
-        reprompt = "おすまいの区を教えてください"
+        speech_text = "msg['text']['1']"
+        card_title = msg['card_title']['1']
+        card_body = msg['card_body']['1']
             
-        handler_input.response_builder.speak(speech_text).ask(reprompt).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
+        handler_input.response_builder.speak(speech_text).ask(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
         return handler_input.response_builder.response
 
     if attr['ward_calno'] is not None:
@@ -233,12 +255,11 @@ def help_intent_handler(handler_input):
     attr = handler_input.attributes_manager.persistent_attributes
 
     if not attr:
-        speech_text = "はじめに、収集エリアの設定を行います。おすまいの区を教えてください"
-        card_title = "初期設定"
-        card_body = "お住いの区を教えてください"
-        reprompt = "おすまいの区を教えてください"
+        speech_text = "msg['text']['1']"
+        card_title = msg['card_title']['1']
+        card_body = msg['card_body']['1']
             
-        handler_input.response_builder.speak(speech_text).ask(reprompt).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
+        handler_input.response_builder.speak(speech_text).ask(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
         return handler_input.response_builder.response
 
     if attr['ward_calno'] is not None:
@@ -267,9 +288,9 @@ def help_intent_handler(handler_input):
 def help_intent_handler(handler_input):
     """Handler for Help Intent."""
     # type: (HandlerInput) -> Response
-    speech_text = "お住まいの地域の、ゴミの収集情報をお知らせします。たとえば、今日のゴミはなに？もしくは、次の燃えないゴミはいつ？と聞いてください"
-    card_title = "こんな風に話かけてください"
-    card_body = "・今日のゴミはなに？\n・燃えないゴミは次いつ？"
+    speech_text = msg['help']['1']
+    card_title = msg['card_title']['2']
+    card_body = msg['card_body']['2']
 
     return handler_input.response_builder.speak(speech_text).ask(
         speech_text).set_card(SimpleCard(
@@ -302,7 +323,7 @@ def all_exception_handler(handler_input, exception):
     # type: (HandlerInput, Exception) -> Response
     logger.error(exception, exc_info=True)
 
-    speech = "すみません、わかりませんでした。もう一度言ってください。"
+    speech = msg['err']['2']
     handler_input.response_builder.speak(speech).ask(speech)
 
     return handler_input.response_builder.response
