@@ -1,4 +1,4 @@
-correspondence_table = {
+trashnumber = {
     # 燃やせるゴミ
     "燃やせる": 1,
     "燃える": 1,
@@ -52,17 +52,22 @@ correspondence_table = {
     "枝葉": 6
 }
 
-def numbercheck(trashname) -> str:
-    return correspondence_table[trashname]
-
-convert_dict = {
+trashtype = {
     1: "燃やせるごみ、スプレー缶類",
     2: "燃やせないごみ、乾電池、ライター",
-    3: "容器プラ",
-    4: "びん、缶、ペット'",
-    5: "雑がみ",
+    3: "容器、プラ",
+    4: "びん、缶、ペット",
+    5: "'雑がみ",
     6: "枝、葉、くさ",
+    7: "収集なし"
 }
 
-def trashname(number) -> str:
-    return convert_dict[number]
+def return_trash_number(trashname) -> int:
+    return trashnumber[trashname]
+
+def return_trash_type(trashnumber) -> str:
+    return trashtype[trashnumber]
+
+def search_trash_type_from_utterance(func, trashname) -> str:
+    number = func(trashname)
+    return trashtype[number]

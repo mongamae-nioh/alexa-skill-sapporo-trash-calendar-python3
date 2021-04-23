@@ -22,8 +22,7 @@ sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
 from ward_calendarnumber import ComfirmWard,CalendarNoInWard
 
-from trashtype import typecheck
-from trashnumber import numbercheck
+import trashinfo
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -218,7 +217,7 @@ def help_intent_handler(handler_input):
         )
 
         TrashNo = response['Items'][0]['TrashNo']
-        trashname = typecheck(TrashNo)        
+        trashname = trashinfo.return_trash_type(TrashNo)        
         speech_text = f"{trashname}の日です。"
 
         handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True)
