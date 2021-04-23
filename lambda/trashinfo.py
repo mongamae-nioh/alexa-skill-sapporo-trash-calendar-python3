@@ -59,7 +59,7 @@ trashtype = {
     4: "びん、缶、ペット",
     5: "'雑がみ",
     6: "枝、葉、くさ",
-    7: "収集なし"
+    0: "収集なし"
 }
 
 def return_trash_number(trashname) -> int:
