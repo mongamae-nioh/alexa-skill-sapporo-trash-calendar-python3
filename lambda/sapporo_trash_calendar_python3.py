@@ -232,28 +232,27 @@ def help_intent_handler(handler_input):
     monthday = str(month) + "月" + str(day) + "日"    
 
     if not attr:
-        speech_text = "msg['text']['1']"
+        speech_text = msg['text']['1']
         card_title = msg['card_title']['1']
         card_body = msg['card_body']['1']
             
-        handler_input.response_builder.speak(speech_text).ask(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
-        return handler_input.response_builder.response
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
 
     if attr['ward_calno'] is not None:
         response = table.query(
             KeyConditionExpression=Key('Date').eq(date) & Key('WardCalNo').eq(attr['ward_calno'])
         )
 
-        TrashNo = response['Items'][0]['TrashNo']
-        trashname = trashinfo.return_trash_type(TrashNo)
-        
-        if TrashNo == 0:
+        trashnumber = response['Items'][0]['TrashNo']
+        trashname = trashinfo.return_trash_type(trashnumber)
+
+        if trashnumber == 0:
             speech_text = '本日、収集はありません。'
         else:
             speech_text = f"{trashname}の日です。"
 
-        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True)
-        return handler_input.response_builder.response
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True).response
+
 
 @sb.request_handler(can_handle_func=is_intent_name("NextWhenTrashDayIntent"))
 def help_intent_handler(handler_input):
@@ -263,21 +262,32 @@ def help_intent_handler(handler_input):
     attr = handler_input.attributes_manager.persistent_attributes
 
     if not attr:
-        speech_text = "msg['text']['1']"
+        speech_text = msg['text']['1']
         card_title = msg['card_title']['1']
         card_body = msg['card_body']['1']
             
-        handler_input.response_builder.speak(speech_text).ask(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False)
-        return handler_input.response_builder.response
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
 
     if attr['ward_calno'] is not None:
         trashnumber = trashinfo.return_trash_number(trashname)
-        
+
         response = table.query(
             KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
             FilterExpression=Attr('TrashNo').eq(trashnumber))
-        
-        when = response['Items'][0]['Date']
+
+        today = datetime.date.today()
+        day_obj = response['Items'][0]['Date']
+        next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
+
+        now = datetime.datetime.now().time()
+        limit = datetime.time(8,30) # AM8:30
+
+        if today == next_trash_day and now > limit:
+            when = response['Items'][1]['Date'] # next time
+        else:
+            when = response['Items'][0]['Date'] # this time
+
+#        print(response['Items'])       
         month = when[5:7]
         day = when[8:10]
         monthday = str(month) + "月" + str(day) + "日"
@@ -289,8 +299,8 @@ def help_intent_handler(handler_input):
 
         speech_text = f"次の{official_trash_name}は、{monthday}、{youbi}です。"
 
-        handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(True)
-        return handler_input.response_builder.response
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(True).response
+
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
@@ -300,9 +310,7 @@ def help_intent_handler(handler_input):
     card_title = msg['card_title']['2']
     card_body = msg['card_body']['2']
 
-    return handler_input.response_builder.speak(speech_text).ask(
-        speech_text).set_card(SimpleCard(
-            card_title, card_body)).response
+    return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).response
 
 
 @sb.request_handler(
@@ -331,8 +339,8 @@ def all_exception_handler(handler_input, exception):
     # type: (HandlerInput, Exception) -> Response
     logger.error(exception, exc_info=True)
 
-    speech = msg['err']['2']
-    handler_input.response_builder.speak(speech).ask(speech)
+    speech_text = msg['err']['2']
+    handler_input.response_builder.speak(speech_text).ask(speech_text)
 
     return handler_input.response_builder.response
 
