@@ -278,14 +278,17 @@ def help_intent_handler(handler_input):
         today = datetime.date.today()
         day_obj = response['Items'][0]['Date']
         next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
+        official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
 
         now = datetime.datetime.now().time()
-        limit = datetime.time(8,30) # AM8:30
+        timelimit = datetime.time(8,30) # AM8:30
 
-        if today == next_trash_day and now > limit:
+        if today == next_trash_day and now > timelimit:
             when = response['Items'][1]['Date'] # next time
+            speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
         else:
             when = response['Items'][0]['Date'] # this time
+            speech_text = f"{official_trash_name}は、"
 
 #        print(response['Items'])       
         month = when[5:7]
@@ -295,9 +298,8 @@ def help_intent_handler(handler_input):
         date = datetime.datetime.strptime(when, '%Y-%m-%d')
         dayoftheweek = date.strftime("%A")
         youbi = dayoftheweek_to_youbi.convert(dayoftheweek)
-        official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
 
-        speech_text = f"次の{official_trash_name}は、{monthday}、{youbi}です。"
+        speech_text += f"{monthday}、{youbi}です。"
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(True).response
 
