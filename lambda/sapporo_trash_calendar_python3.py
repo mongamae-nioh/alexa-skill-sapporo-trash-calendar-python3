@@ -224,6 +224,10 @@ def yes_intent_handler(handler_input):
     attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
+    if session_attr['reminder'] == 'can set':
+        speech_text = 'わかりました'
+        return handler_input.response_builder.speak(speech_text).response
+
     if session_attr['ward_calno'] in attr:
         speech_text = msg['text']['2']
         card_title = msg['card_title']['2']
