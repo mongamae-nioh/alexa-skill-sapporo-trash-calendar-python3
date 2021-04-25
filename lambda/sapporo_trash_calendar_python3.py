@@ -314,20 +314,20 @@ def help_intent_handler(handler_input):
         else:
             when = response['Items'][0]['Date'] # this time
             speech_text = f"{official_trash_name}は、"
-            session_attr['reminder'] = 'can set'
 
-#        print(response['Items'])       
         month = when[5:7]
         day = when[8:10]
         monthday = str(month) + "月" + str(day) + "日"
-
         date = datetime.datetime.strptime(when, '%Y-%m-%d')
         dayoftheweek = date.strftime("%A")
         youbi = dayoftheweek_to_youbi.convert(dayoftheweek)
-
         speech_text += f"{monthday}、{youbi}です。"
 
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(True).response
+        # set reminder 
+        session_attr['reminder'] = 'can set'
+        speech_text += f"その日の朝にお知らせしましょうか？"
+
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(False).response
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
