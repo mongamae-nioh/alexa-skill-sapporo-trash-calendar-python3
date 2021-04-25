@@ -7,11 +7,17 @@ import logging
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_core.handler_input import HandlerInput
-
-from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
-
 import datetime
+from ward_calendarnumber import ComfirmWard,CalendarNoInWard
+import trashinfo
+import dayoftheweek_to_youbi
+import json
+
+# for reminder
+from ask_sdk_model.services.reminder_management import Trigger, TriggerType, AlertInfoSpokenInfo, AlertInfo, SpokenText, PushNotification, PushNotificationStatus, ReminderRequest
+from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
+
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
@@ -20,24 +26,23 @@ table = dynamodb.Table('SapporoTrashCalendar')
 from ask_sdk.standard import StandardSkillBuilder
 sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
 
-from ward_calendarnumber import ComfirmWard,CalendarNoInWard
-
-import trashinfo
-import dayoftheweek_to_youbi
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-import json
+# for speak message
 json_open = open('./messages/messages.json', 'r')
 msg = json.load(json_open)
 
-from speech_builder import generate_speech
+# for reminder
+REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
+TIME_ZONE_ID = 'Asia/Tokyo'
+LOCALE = 'ja-JP'
 
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
     """Handler for Skill Launch."""
     # type: (HandlerInput) -> Response
+
     attr = handler_input.attributes_manager.persistent_attributes
     if not attr:
         text = msg['text']['1']
@@ -47,7 +52,7 @@ def launch_request_handler(handler_input):
         text = msg['text']['2']
         card_title = msg['card_title']['2']
         card_body = msg['card_body']['2']
-    
+
     # set current values to sesssion attributes
     #handler_input.attributes_manager.session_attributes = attr
 
@@ -175,6 +180,24 @@ def yes_intent_handler(handler_input):
         card_body = msg['card_body']['2']
             
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+
+    # set reminder
+    if session_attr['reminder'] == 'can set':
+        request_envelope = handler_input.request_envelope
+        permissions = request_envelope.context.system.user.permissions
+        reminder_service = handler_input.service_client_factory.get_reminder_management_service()
+
+        # no permission
+        if not (permissions and permissions.consent_token):
+            logger.info("リマインダーをセットできる権限がありません")
+            
+            return (
+                handler_input.response_builder
+                .speak("リマインダーをセットできません。アレクサアプリからリマインダーの設定を許可してください")
+                .set_card(AskForPermissionsConsentCard(permissions=REQUIRED_PERMISSIONS))
+                .response
+            )
+
     if session_attr['ward_calno']:
         speech_text = msg['text']['5']
         card_title = msg['card_title']['2']
@@ -191,6 +214,7 @@ def yes_intent_handler(handler_input):
         card_body = msg['card_body']['1']
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.NoIntent"))
@@ -260,6 +284,7 @@ def help_intent_handler(handler_input):
     slots = handler_input.request_envelope.request.intent.slots
     trashname = slots['trash'].value
     attr = handler_input.attributes_manager.persistent_attributes
+    session_attr = handler_input.attributes_manager.session_attributes
 
     if not attr:
         speech_text = msg['text']['1']
@@ -289,6 +314,7 @@ def help_intent_handler(handler_input):
         else:
             when = response['Items'][0]['Date'] # this time
             speech_text = f"{official_trash_name}は、"
+            session_attr['reminder'] = 'can set'
 
 #        print(response['Items'])       
         month = when[5:7]
