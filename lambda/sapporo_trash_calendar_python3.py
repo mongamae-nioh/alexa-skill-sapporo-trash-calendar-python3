@@ -13,6 +13,7 @@ from ward_calendarnumber import ComfirmWard,CalendarNoInWard
 import trashinfo
 import dayoftheweek_to_youbi
 import json
+import pytz
 
 # for reminder
 from ask_sdk_model.services import ServiceException
@@ -290,6 +291,8 @@ def help_intent_handler(handler_input):
     month = date[5:7]
     day = date[8:10]
     monthday = str(month) + "月" + str(day) + "日"    
+    today = datetime.date.today()
+    listen_day = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
     if not attr:
         speech_text = msg['text']['1']
@@ -309,7 +312,13 @@ def help_intent_handler(handler_input):
         if trashnumber == 0:
             speech_text = '本日、収集はありません。'
         else:
-            speech_text = f"{trashname}の日です。"
+            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
+            timelimit = datetime.time(8,30) # AM8:30
+
+            if listen_day == today and now > timelimit:
+                speech_text = f"{trashname}の日です。なお、ごみを出せるのは当日の朝8時半までです。"
+            else:
+                speech_text = f"{trashname}の日です。"
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True).response
 
