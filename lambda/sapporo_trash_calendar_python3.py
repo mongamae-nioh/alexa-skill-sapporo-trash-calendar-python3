@@ -399,7 +399,6 @@ def help_intent_handler(handler_input):
 
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(False).response
 
-
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
     """Handler for Help Intent."""
