@@ -350,7 +350,7 @@ def help_intent_handler(handler_input):
         next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
         official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
         session_attr['trash_name'] = official_trash_name
-        now = datetime.datetime.now().time()
+        now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
         timelimit = datetime.time(8,30) # AM8:30
 
         if today == next_trash_day and now > timelimit:
