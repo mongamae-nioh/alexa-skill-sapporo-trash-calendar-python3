@@ -161,6 +161,7 @@ def select_calendarno_intent_handler(handler_input):
     else:
         speech_text = f"おすまいは{ward_kanji}、カレンダー番号は{number_is}番です。よろしいですか?"
         session_attr['ward_calno'] = ward_alpha + "-" + number_is
+        session_attr['reminder'] = 'no'
 
         return (
             handler_input.response_builder
@@ -188,7 +189,7 @@ def yes_intent_handler(handler_input):
             
             return (
                 handler_input.response_builder
-                .speak("リマインダーをセットできません。アレクサアプリからリマインダーの設定を許可してください")
+                .speak("お知らせをセットできませんでした。アレクサアプリを起動して、札幌ごみなげカレンダーのスキルから設定を押し、リマインダーを許可してください。")
                 .set_card(AskForPermissionsConsentCard(permissions=REQUIRED_PERMISSIONS))
                 .response
             )
@@ -196,65 +197,32 @@ def yes_intent_handler(handler_input):
         reminder_client = handler_input.service_client_factory.get_reminder_management_service()
 
         try:
+            request_time = session_attr['next_time'] + 'T08:00:00' # AM8:00 on the day
             reminder_response = reminder_client.create_reminder(
                 reminder_request=ReminderRequest(
-                    request_time=datetime.datetime.now(),
                     trigger=Trigger(
-                        object_type=TriggerType.SCHEDULED_RELATIVE,
-                        offset_in_seconds=60),
+                        object_type=TriggerType.SCHEDULED_ABSOLUTE,
+                        scheduled_time=request_time,
+                        time_zone_id=TIME_ZONE_ID
+                        ),
                     alert_info=AlertInfo(
                         spoken_info=AlertInfoSpokenInfo(
-                            content=[SpokenText(locale="en-US", text="Test reminder")])),
+                            content=[SpokenText(locale=LOCALE, text=session_attr['trash_name'] + "の収集日です")])),
                     push_notification=PushNotification(
                         status=PushNotificationStatus.ENABLED))) # type: ReminderResponse
-            speech_text = "はい、 リマインダーを設定しました。"
+            speech_text = "当日の午前8時にリマインダーを設定しました。"
 
-            logger.info("Created reminder : {}".format(reminder_response))
+            logger.info(f"Created reminder : {reminder_response}")
             return handler_input.response_builder.speak(speech_text).set_card(
                 SimpleCard(
-                    "Reminder created with id", reminder_response.alert_token)).response
+                    "設定完了", "当日の朝8時にお知らせします")).response
 
         except ServiceException as e:
-            logger.info("Exception encountered : {}".format(e.body))
+            logger.info(f"Exception encountered : {e.body}")
             speech_text = "申し訳ありません。エラーが発生しました。"
             return handler_input.response_builder.speak(speech_text).set_card(
                 SimpleCard(
                     "Reminder not created",str(e.body))).response
-
-        # set reminder
-        day_obj = session_attr['next_time'] + " " + '15:00'
-        dt = datetime.datetime.strptime(day_obj, '%Y-%m-%d %H:%M')
-
-        notification1 = dt.strftime("%Y-%m-%dT%H:%M:%S")
-        print(notification1)
-        
-        # トリガー情報（SCHEDULED_ABSOLUTE -> 絶対時刻）
-        trigger1 = Trigger(TriggerType.SCHEDULED_ABSOLUTE, notification1, time_zone_id=TIME_ZONE_ID)
-        
-        # 読み上げテキスト
-        #text1 = SpokenText(locale=LOCALE, ssml='時間です。')
-        
-        #alert1 = AlertInfo(AlertInfoSpokenInfo([text1]))
-        
-        # Alexaアプリへの通知はしない（ENABLEDだと通知有効）
-        push_notification = PushNotification(PushNotificationStatus.DISABLED)
-        
-        # リマインダーAPIへのリクエスト本文
-        reminder_request = ReminderRequest(notification1)
-        
-        try:
-            print('ok')
-            reminder_service.create_reminder()
-        except ServiceException as e:
-            logger.error(e)
-            raise e
-
-        return (
-            handler_input.response_builder
-            .speak('会議終了20分前と10分前にリマインダーを登録しました。それでは、ファリシーテータの方、会議の進行、<say-as interpret-as="interjection">よろしくお願いします</say-as>')
-            .set_card(SimpleCard("会議を始めましょう"))
-            .response
-        )
 
     if 'ward_calno' in attr:
         speech_text = msg['text']['2']
@@ -372,6 +340,7 @@ def help_intent_handler(handler_input):
         day_obj = response['Items'][0]['Date']
         next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
         official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
+        session_attr['trash_name'] = official_trash_name
 
         now = datetime.datetime.now().time()
         timelimit = datetime.time(8,30) # AM8:30
