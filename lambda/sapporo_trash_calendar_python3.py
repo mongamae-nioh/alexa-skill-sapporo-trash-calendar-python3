@@ -37,10 +37,14 @@ logger.setLevel(logging.INFO)
 json_open = open('./messages/messages.json', 'r')
 msg = json.load(json_open)
 
-# for reminder
+# variable
+## for reminder
 REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
 TIME_ZONE_ID = 'Asia/Tokyo'
 LOCALE = 'ja-JP'
+
+# garbagecollection time limit
+#collection_time_limit = datetime.time(8,30) # AM8:30
 
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
@@ -64,10 +68,13 @@ def launch_request_handler(handler_input):
 #        card_title = msg['card_title']['2']
 #        card_body = msg['card_body']['2']
 
-        today = str(datetime.date.today())
+        today = str(datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date())
+        print(today)
         response = table.query(
             KeyConditionExpression=Key('Date').eq(today) & Key('WardCalNo').eq(attr['ward_calno'])
         )
+
+        print(response)
 
         trashnumber = response['Items'][0]['TrashNo']
         trashname = trashinfo.return_trash_type(trashnumber)
