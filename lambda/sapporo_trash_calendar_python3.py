@@ -43,8 +43,11 @@ REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
 TIME_ZONE_ID = 'Asia/Tokyo'
 LOCALE = 'ja-JP'
 
+## date
+today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
+
 # garbagecollection time limit
-#collection_time_limit = datetime.time(8,30) # AM8:30
+time_limit = datetime.time(8,30) # AM8:30
 
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
@@ -68,13 +71,10 @@ def launch_request_handler(handler_input):
 #        card_title = msg['card_title']['2']
 #        card_body = msg['card_body']['2']
 
-        today = str(datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date())
-        print(today)
+        today_str = str(today)
         response = table.query(
-            KeyConditionExpression=Key('Date').eq(today) & Key('WardCalNo').eq(attr['ward_calno'])
+            KeyConditionExpression=Key('Date').eq(today_str) & Key('WardCalNo').eq(attr['ward_calno'])
         )
-
-        print(response)
 
         trashnumber = response['Items'][0]['TrashNo']
         trashname = trashinfo.return_trash_type(trashnumber)
@@ -314,7 +314,7 @@ def help_intent_handler(handler_input):
     month = date[5:7]
     day = date[8:10]
     monthday = str(month) + "月" + str(day) + "日"    
-    today = datetime.date.today()
+    #today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
     listen_day = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
     if not attr:
@@ -336,9 +336,9 @@ def help_intent_handler(handler_input):
             speech_text = '本日、収集はありません。'
         else:
             now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
-            timelimit = datetime.time(8,30) # AM8:30
+            #time_limit = datetime.time(8,30) # AM8:30
 
-            if listen_day == today and now > timelimit:
+            if listen_day == today and now > time_limit:
                 speech_text = f"{trashname}の日です。なお、ごみを出せるのは当日の朝8時半までです。"
             else:
                 speech_text = f"{trashname}の日です。"
@@ -368,15 +368,15 @@ def help_intent_handler(handler_input):
             KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
             FilterExpression=Attr('TrashNo').eq(trashnumber))
 
-        today = datetime.date.today()
+        #today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
         day_obj = response['Items'][0]['Date']
         next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
         official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
         session_attr['trash_name'] = official_trash_name
         now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
-        timelimit = datetime.time(8,30) # AM8:30
+        #time_limit = datetime.time(8,30) # AM8:30
 
-        if today == next_trash_day and now > timelimit:
+        if today == next_trash_day and now > time_limit:
             when = response['Items'][1]['Date'] # next time
             session_attr['next_time'] = when
             speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
