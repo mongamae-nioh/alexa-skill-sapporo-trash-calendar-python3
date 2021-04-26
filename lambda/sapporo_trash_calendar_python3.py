@@ -49,25 +49,41 @@ def launch_request_handler(handler_input):
 
     attr = handler_input.attributes_manager.persistent_attributes
     if not attr:
-        text = msg['text']['1']
+        speech_text = msg['text']['1']
         card_title = msg['card_title']['1']
         card_body =  msg['card_body']['1']
+
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard(card_title, card_body))
+            .set_should_end_session(False)
+            .response
+        )
     else:
-        text = msg['text']['2']
-        card_title = msg['card_title']['2']
-        card_body = msg['card_body']['2']
+#        text = msg['text']['2']
+#        card_title = msg['card_title']['2']
+#        card_body = msg['card_body']['2']
+
+        today = str(datetime.date.today())
+        response = table.query(
+            KeyConditionExpression=Key('Date').eq(today) & Key('WardCalNo').eq(attr['ward_calno'])
+        )
+
+        trashnumber = response['Items'][0]['TrashNo']
+        trashname = trashinfo.return_trash_type(trashnumber)
+
+        speech_text = f"今日は、{trashname}の日です。"
+
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard("今日のごみは", trashname))
+            .response
+        )
 
     # set current values to sesssion attributes
     #handler_input.attributes_manager.session_attributes = attr
 
 #    return generate_speech(handler_input, text, card_title, card_body, 'no')
-
-    return (
-        handler_input.response_builder.speak(text)
-        .set_card(SimpleCard(card_title, card_body))
-        .set_should_end_session(False)
-        .response
-    )
     
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
