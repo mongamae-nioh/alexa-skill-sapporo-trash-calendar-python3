@@ -306,14 +306,29 @@ def help_intent_handler(handler_input):
     #today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
     listen_day = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
+    # 初期設定が終わっていない場合
     if not attr:
         speech_text = msg['text']['1']
         card_title = msg['card_title']['1']
         card_body = msg['card_body']['1']
             
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+    else:
+        area = attr['ward_calno']
+        trash_name = trashcollection.what_day(date, area)
 
-    if attr['ward_calno'] is not None:
+        if trash_name == '収集なし':
+            speech_text = '本日、収集はありません。'
+        else:
+            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
+            speech_text = f"{trash_name}の日です。"
+
+            if listen_day == today and now > time_limit:
+                speech_text += 'なお、ごみを出せるのは当日の朝8時半までです。'
+
+        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trash_name)).set_should_end_session(True).response
+
+'''
         response = table.query(
             KeyConditionExpression=Key('Date').eq(date) & Key('WardCalNo').eq(attr['ward_calno'])
         )
@@ -331,9 +346,8 @@ def help_intent_handler(handler_input):
                 speech_text = f"{trashname}の日です。なお、ごみを出せるのは当日の朝8時半までです。"
             else:
                 speech_text = f"{trashname}の日です。"
-
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True).response
-
+'''
 
 @sb.request_handler(can_handle_func=is_intent_name("NextWhenTrashDayIntent"))
 def help_intent_handler(handler_input):

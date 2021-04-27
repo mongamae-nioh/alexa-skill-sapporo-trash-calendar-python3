@@ -24,16 +24,16 @@ today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 time_limit = datetime.time(8,30) # AM8:30
 
 
-def what_day(day: str, area) -> str:
+def what_day(day: str, area:str ) -> str:
     """その日収集されるごみを教えてくれる"""
     response = table.query(
         KeyConditionExpression=Key('Date').eq(day) & Key('WardCalNo').eq(area)
     )
 
-    trashnumber = response['Items'][0]['TrashNo']
-    trashname = trashinfo.return_trash_type(trashnumber)
+    trash_number = response['Items'][0]['TrashNo']
+    trash_name = trashinfo.return_trash_type(trash_number)
 
-    return trashname
+    return trash_name
 
 '''
 def next_trash_day(trashname: str, area) -> str:
