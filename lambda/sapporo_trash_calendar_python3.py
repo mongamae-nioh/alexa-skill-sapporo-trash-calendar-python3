@@ -15,6 +15,8 @@ import dayoftheweek_to_youbi
 import json
 import pytz
 
+import trashcollection
+
 # for reminder
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.services.reminder_management import (
@@ -47,7 +49,7 @@ LOCALE = 'ja-JP'
 today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 
 # garbagecollection time limit
-time_limit = datetime.time(8,30) # AM8:30
+time_limit = datetime.time(8,30) # 札幌市はAM8:30までにごみを出す
 
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
@@ -55,6 +57,7 @@ def launch_request_handler(handler_input):
     # type: (HandlerInput) -> Response
 
     attr = handler_input.attributes_manager.persistent_attributes
+    # 初期設定が終わっていない場合
     if not attr:
         speech_text = msg['text']['1']
         card_title = msg['card_title']['1']
@@ -67,31 +70,17 @@ def launch_request_handler(handler_input):
             .response
         )
     else:
-#        text = msg['text']['2']
-#        card_title = msg['card_title']['2']
-#        card_body = msg['card_body']['2']
-
-        today_str = str(today)
-        response = table.query(
-            KeyConditionExpression=Key('Date').eq(today_str) & Key('WardCalNo').eq(attr['ward_calno'])
-        )
-
-        trashnumber = response['Items'][0]['TrashNo']
-        trashname = trashinfo.return_trash_type(trashnumber)
-
-        speech_text = f"今日は、{trashname}の日です。"
+        str_today = str(today)
+        area = attr['ward_calno']
+        trash_name = trashcollection.what_day(str_today, area)
+        speech_text = f'今日は、{trash_name}、の収集日です。'
 
         return (
             handler_input.response_builder.speak(speech_text)
-            .set_card(SimpleCard("今日のごみは", trashname))
+            .set_card(SimpleCard("今日のごみ", trash_name))
             .response
         )
 
-    # set current values to sesssion attributes
-    #handler_input.attributes_manager.session_attributes = attr
-
-#    return generate_speech(handler_input, text, card_title, card_body, 'no')
-    
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
 def select_ward_intent_handler(handler_input):
