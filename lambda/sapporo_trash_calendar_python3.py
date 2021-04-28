@@ -3,6 +3,7 @@
 # This is a simple Hello World Alexa Skill, built using
 # the decorators approach in skill builder.
 import logging
+from typing import Collection
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
@@ -326,81 +327,79 @@ def help_intent_handler(handler_input):
             if listen_day == today and now > time_limit:
                 speech_text += 'なお、ごみを出せるのは当日の朝8時半までです。'
 
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trash_name)).set_should_end_session(True).response
-
-'''
-        response = table.query(
-            KeyConditionExpression=Key('Date').eq(date) & Key('WardCalNo').eq(attr['ward_calno'])
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard(monthday, trash_name))
+            .set_should_end_session(True).response
         )
 
-        trashnumber = response['Items'][0]['TrashNo']
-        trashname = trashinfo.return_trash_type(trashnumber)
-
-        if trashnumber == 0:
-            speech_text = '本日、収集はありません。'
-        else:
-            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
-            #time_limit = datetime.time(8,30) # AM8:30
-
-            if listen_day == today and now > time_limit:
-                speech_text = f"{trashname}の日です。なお、ごみを出せるのは当日の朝8時半までです。"
-            else:
-                speech_text = f"{trashname}の日です。"
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, trashname)).set_should_end_session(True).response
-'''
 
 @sb.request_handler(can_handle_func=is_intent_name("NextWhenTrashDayIntent"))
 def help_intent_handler(handler_input):
     """Handler for next when trash day Intent."""
     slots = handler_input.request_envelope.request.intent.slots
-    trashname = slots['trash'].value
+    trash_name = slots['trash'].value
     attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
+    trash_number = trashinfo.return_trash_number(trash_name)
 
     if not attr:
         speech_text = msg['text']['1']
         card_title = msg['card_title']['1']
         card_body = msg['card_body']['1']
             
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard(card_title, card_body))
+            .set_should_end_session(False).response
+        )
+    else:
+        area = attr['ward_calno']
+        if area is not None:
+            response = table.query(
+                KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
+                FilterExpression=Attr('TrashNo').eq(trash_number))
 
-    if attr['ward_calno'] is not None:
-        trashnumber = trashinfo.return_trash_number(trashname)
+            # 当日の収集時間を超えている場合は次の収集日を提示
+            day_obj = response['Items'][0]['Date']
+            next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
+            official_trash_name = trashinfo.search_trash_type_from_utterance(
+                trashinfo.return_trash_number, trash_name
+                )
+            session_attr['trash_name'] = official_trash_name
+            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
 
-        response = table.query(
-            KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
-            FilterExpression=Attr('TrashNo').eq(trashnumber))
+            if today == next_trash_day and now > time_limit:
+                when = response['Items'][1]['Date'] # next time
+                session_attr['next_time'] = when
+                speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
+            else:
+                when = response['Items'][0]['Date'] # this time
+                session_attr['next_time'] = when
+                speech_text = f"{official_trash_name}は、"
 
-        #today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
-        day_obj = response['Items'][0]['Date']
-        next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
-        official_trash_name = trashinfo.search_trash_type_from_utterance(trashinfo.return_trash_number, trashname)
-        session_attr['trash_name'] = official_trash_name
-        now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
-        #time_limit = datetime.time(8,30) # AM8:30
+            # create japanese calendar
+            ## n月 n日
+            month = when[5:7]
+            day = when[8:10]
+            monthday = str(month) + "月" + str(day) + "日"
 
-        if today == next_trash_day and now > time_limit:
-            when = response['Items'][1]['Date'] # next time
-            session_attr['next_time'] = when
-            speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
-        else:
-            when = response['Items'][0]['Date'] # this time
-            session_attr['next_time'] = when
-            speech_text = f"{official_trash_name}は、"
+            ## 曜日
+            date = datetime.datetime.strptime(when, '%Y-%m-%d')
+            dayoftheweek = date.strftime("%A")
+            youbi = dayoftheweek_to_youbi.convert(dayoftheweek)
 
-        month = when[5:7]
-        day = when[8:10]
-        monthday = str(month) + "月" + str(day) + "日"
-        date = datetime.datetime.strptime(when, '%Y-%m-%d')
-        dayoftheweek = date.strftime("%A")
-        youbi = dayoftheweek_to_youbi.convert(dayoftheweek)
-        speech_text += f"{monthday}、{youbi}です。"
+            speech_text += f"{monthday}、{youbi}です。"
 
-        # set reminder 
-        session_attr['reminder'] = 'can set'
-        speech_text += f"その日の朝にお知らせしましょうか？"
+            # set reminder 
+            session_attr['reminder'] = 'can set'
+            speech_text += f"その日の朝にお知らせしましょうか？"
 
-        return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(monthday, official_trash_name)).set_should_end_session(False).response
+            return (
+                handler_input.response_builder.speak(speech_text)
+                .set_card(SimpleCard(monthday, official_trash_name))
+                .set_should_end_session(False).response
+            )
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
