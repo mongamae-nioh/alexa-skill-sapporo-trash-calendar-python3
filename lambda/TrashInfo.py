@@ -44,9 +44,6 @@ class TrashInfo:
     def number(self, trash_name: str) -> int:
         return trash_data['trash_number'][trash_name]
 
-#    def type(trashnumber) -> str:
-#        return trashtype[trashnumber]
-
     def official_name(self, trash_name) -> str:
         trash_number = self.number(trash_name)
         return trash_data['trash_type'][str(trash_number)]

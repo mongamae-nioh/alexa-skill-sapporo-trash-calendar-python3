@@ -16,7 +16,6 @@ import dayoftheweek_to_youbi
 import json
 import pytz
 
-import trashcollection
 from TrashInfo import TrashInfo
 
 # for reminder
