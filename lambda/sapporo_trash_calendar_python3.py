@@ -17,6 +17,7 @@ import json
 import pytz
 
 import trashcollection
+from TrashInfo import TrashInfo
 
 # for reminder
 from ask_sdk_model.services import ServiceException
@@ -52,6 +53,9 @@ today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 # garbagecollection time limit
 time_limit = datetime.time(8,30) # 札幌市はAM8:30までにごみを出す
 
+# trash info
+trash_info = TrashInfo()
+
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
     """Handler for Skill Launch."""
@@ -73,7 +77,7 @@ def launch_request_handler(handler_input):
     else:
         str_today = str(today)
         area = attr['ward_calno']
-        trash_name = trashcollection.what_day(str_today, area)
+        trash_name = trash_info.what_day(str_today, area)
         speech_text = f'今日は、{trash_name}、の収集日です。'
 
         return (
@@ -301,11 +305,8 @@ def help_intent_handler(handler_input):
     slots = handler_input.request_envelope.request.intent.slots
     date = slots['when'].value
     attr = handler_input.attributes_manager.persistent_attributes
-    month = date[5:7]
-    day = date[8:10]
-    monthday = str(month) + "月" + str(day) + "日"    
-    #today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
     listen_day = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+    monthday = trash_info.japanese_date(listen_day)
 
     # 初期設定が終わっていない場合
     if not attr:
@@ -316,10 +317,10 @@ def help_intent_handler(handler_input):
         return handler_input.response_builder.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
     else:
         area = attr['ward_calno']
-        trash_name = trashcollection.what_day(date, area)
+        trash_name = trash_info.what_day(date, area)
 
         if trash_name == '収集なし':
-            speech_text = '本日、収集はありません。'
+            speech_text = 'ごみの収集はありません。'
         else:
             now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
             speech_text = f"{trash_name}の日です。"
@@ -341,7 +342,6 @@ def help_intent_handler(handler_input):
     trash_name = slots['trash'].value
     attr = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
-    trash_number = trashinfo.return_trash_number(trash_name)
 
     if not attr:
         speech_text = msg['text']['1']
@@ -355,51 +355,32 @@ def help_intent_handler(handler_input):
         )
     else:
         area = attr['ward_calno']
-        if area is not None:
-            response = table.query(
-                KeyConditionExpression=Key('WardCalNo').eq(attr['ward_calno']),
-                FilterExpression=Attr('TrashNo').eq(trash_number))
+        day_obj = trash_info.next_day(trash_name, area)
+        next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
+        now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
+        official_trash_name = trash_info.official_name(trash_name)
 
-            # 当日の収集時間を超えている場合は次の収集日を提示
-            day_obj = response['Items'][0]['Date']
-            next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
-            official_trash_name = trashinfo.search_trash_type_from_utterance(
-                trashinfo.return_trash_number, trash_name
-                )
-            session_attr['trash_name'] = official_trash_name
-            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
+        if today == next_trash_day and now > time_limit:
+            speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
+        else:
+            speech_text = f"{official_trash_name}は、"
 
-            if today == next_trash_day and now > time_limit:
-                when = response['Items'][1]['Date'] # next time
-                session_attr['next_time'] = when
-                speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
-            else:
-                when = response['Items'][0]['Date'] # this time
-                session_attr['next_time'] = when
-                speech_text = f"{official_trash_name}は、"
+        monthday = trash_info.japanese_date(next_trash_day)
+        youbi = dayoftheweek_to_youbi.convert(next_trash_day)
+        speech_text += f"{monthday}、{youbi}です。"
 
-            # create japanese calendar
-            ## n月 n日
-            month = when[5:7]
-            day = when[8:10]
-            monthday = str(month) + "月" + str(day) + "日"
+        session_attr['trash_name'] = official_trash_name
+        session_attr['next_time'] = next_trash_day
 
-            ## 曜日
-            date = datetime.datetime.strptime(when, '%Y-%m-%d')
-            dayoftheweek = date.strftime("%A")
-            youbi = dayoftheweek_to_youbi.convert(dayoftheweek)
+        # set reminder 
+        session_attr['reminder'] = 'can set'
+        speech_text += f"その日の朝にお知らせしましょうか？"
 
-            speech_text += f"{monthday}、{youbi}です。"
-
-            # set reminder 
-            session_attr['reminder'] = 'can set'
-            speech_text += f"その日の朝にお知らせしましょうか？"
-
-            return (
-                handler_input.response_builder.speak(speech_text)
-                .set_card(SimpleCard(monthday, official_trash_name))
-                .set_should_end_session(False).response
-            )
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard(monthday, official_trash_name))
+            .set_should_end_session(False).response
+        )
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))

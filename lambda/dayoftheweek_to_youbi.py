@@ -8,5 +8,7 @@ correspondence_table = {
     "Saturday": "土曜日"
 }
 
-def convert(engish) -> str:
-    return correspondence_table[engish]
+import datetime
+def convert(day: datetime.date) -> str:
+    dayoftheweek = day.strftime("%A")
+    return correspondence_table[dayoftheweek]

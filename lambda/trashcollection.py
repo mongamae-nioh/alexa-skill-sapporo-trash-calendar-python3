@@ -35,6 +35,34 @@ def what_day(day: str, area: str ) -> str:
 
     return trash_name
 
+def next_day(trash_name: str, area: str) -> str:
+    """問い合わせたごみの次の収集日を教えてくれる"""
+    trash_number = trashinfo.return_trash_number(trash_name)
+
+    response = table.query(
+        KeyConditionExpression=Key('WardCalNo').eq(area),
+        FilterExpression=Attr('TrashNo').eq(trash_number))
+
+    day_obj = response['Items'][0]['Date']
+    next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
+    now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
+
+    # 今日が収集日で収集時間を過ぎている場合は次回の収集日を教える
+    if today == next_trash_day and now > time_limit:
+        when = response['Items'][1]['Date'] # next time
+    else:
+        when = response['Items'][0]['Date'] # this time
+
+    return when
+
+
+def next_day_japanese(func) -> str:
+    monthday = func
+    month = monthday[5:7]
+    day = monthday[8:10]
+    return str(month) + "月" + str(day) + "日"
+
+
 def next_trash_day(trash_name: str, area: str) -> str:
     """問い合わせたごみの次の収集日を教えてくれる"""
     trash_number = trashinfo.return_trash_number(trash_name)
