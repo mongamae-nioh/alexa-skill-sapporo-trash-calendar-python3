@@ -1,73 +1,75 @@
-trashnumber = {
-    # 燃やせるゴミ
-    "燃やせる": 1,
-    "燃える": 1,
-    "燃やせるゴミ": 1,
-    "燃えるゴミ": 1,
-    "可燃物": 1,
-    "可燃": 1,
-    "燃やせるごみ": 1,
-    "燃えるごみ":1,
-    # 燃やせないゴミ,乾電池、ライター
-    "燃やせない": 2,
-    "燃えない": 2,
-    "燃やせないゴミ": 2,
-    "燃えないゴミ": 2,
-    "不燃物": 2,
-    "不燃": 2,
-    "電池": 2,
-    "乾電池": 2,
-    "ライター": 2,
-    "燃やせないごみ": 2,
-    "燃えないごみ": 2,
-    # プラ
-    "プラ": 3,
-    "プラ容器": 3,
-    "プラスチック": 3,
-    "プラスティック": 3,
-    "プラゴミ": 3,
-    "発泡スチロール": 3,
-    "発泡": 3,
-    # ビン、カン、ペット
-    "ペット": 4,
-    "ペットボトル": 4,
-    "びん": 4,
-    "缶": 4,
-    "空き缶": 4,
-    "スチール缶": 4,
-    "アルミ缶": 4,
-    # 雑がみ
-    "雑がみ": 5,
-    "紙": 5,
-    "包装紙": 5,
-    "模造紙": 5,
-    "レシート": 5,
-    "箱": 5,
-    # 枝、葉、草
-    "枝": 6,
-    "葉っぱ": 6,
-    "葉": 6,
-    "草": 6,
-    "雑草": 6,
-    "枝葉": 6
-}
+#from ask_sdk_core.handler_input import HandlerInput
+#from ask_sdk_model import Response
 
-trashtype = {
-    1: "燃やせるごみ、スプレー缶類",
-    2: "燃やせないごみ、乾電池、ライター",
-    3: "容器、プラ",
-    4: "びん、缶、ペット",
-    5: "'雑がみ",
-    6: "枝、葉、くさ",
-    0: "収集なし"
-}
+import datetime
+import dayoftheweek_to_youbi
+import pytz
+#import trashinfo
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
 
-def return_trash_number(trashname) -> int:
-    return trashnumber[trashname]
+dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
+table = dynamodb.Table('SapporoTrashCalendar')
 
-def return_trash_type(trashnumber) -> str:
-    return trashtype[trashnumber]
+# data
+import json
+trash_json = open('./data/trashdata.json', 'r')
+trash_data = json.load(trash_json)
 
-def search_trash_type_from_utterance(func, trashname) -> str:
-    number = func(trashname)
-    return trashtype[number]
+dayoftheweek_json = open('./data/dayoftheweek.json', 'r')
+dayoftheweek_data = json.load(dayoftheweek_json)
+
+# variable
+## for reminder
+REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
+TIME_ZONE_ID = 'Asia/Tokyo'
+LOCALE = 'ja-JP'
+
+## date
+today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
+
+# garbagecollection time limit
+time_limit = datetime.time(8,30) # AM8:30
+
+
+class TrashInfo:
+    def what_day(self, day: str, area: str) -> str:
+        """その日収集されるごみを教えてくれる"""
+        response = table.query(
+            KeyConditionExpression=Key('Date').eq(day) & Key('WardCalNo').eq(area)
+        )
+        trash_number = response['Items'][0]['TrashNo']
+        return trash_data['trash_type'][str(trash_number)]
+
+    def number(self, trash_name: str) -> int:
+        return trash_data['trash_number'][trash_name]
+
+    def official_name(self, trash_name) -> str:
+        trash_number = self.number(trash_name)
+        return trash_data['trash_type'][str(trash_number)]
+
+    def next_day(self, trash_name: str, area: str) -> str:
+        """問い合わせたごみの次の収集日を教えてくれる"""
+        trash_number = self.number(trash_name)
+
+        response = table.query(
+            KeyConditionExpression=Key('WardCalNo').eq(area),
+            FilterExpression=Attr('TrashNo').eq(trash_number))
+
+        day_obj = response['Items'][0]['Date']
+        next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
+        now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
+
+        # 今日が収集日で収集時間を過ぎている場合は次回の収集日を教える
+        if today == next_trash_day and now > time_limit:
+            return response['Items'][1]['Date'] # next time(yyyy-mm-dd)
+        else:
+            return response['Items'][0]['Date'] # this time(yyyy-mm-dd)
+
+    def japanese_date(self, date: datetime.date) -> str:
+        month = date.month
+        day = date.day
+        return str(month) + "月" + str(day) + "日"
+
+    def convert_to_youbi(self, engish: str) -> str:
+        return dayoftheweek_data[engish]
