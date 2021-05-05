@@ -9,47 +9,49 @@ from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model import Response
-import datetime
-from ward_calendarnumber import ComfirmWard,CalendarNoInWard
-import json
-import pytz
-from trashinfo import TrashInfo
 
-# for reminder
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# リマインダー用
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.services.reminder_management import (
     ReminderRequest, Trigger, TriggerType, AlertInfo, PushNotification,
     PushNotificationStatus, ReminderResponse, AlertInfoSpokenInfo, SpokenText)
 from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
 
-from ask_sdk.standard import StandardSkillBuilder
-sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
+# リマインダーのパーミッション（Alexaの仕様）
+REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# for speak message
+# 発話内容は直に書くと見づらくなるので別ファイルとした
+# コードを見れば何を発話するかわかりやすいようにしたつもり
+import json
 json_open = open('./messages/messages.json', 'r')
 msg = json.load(json_open)
 
-# variable
-## for reminder
-REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
+# TZがUTCのため日付がずれる対策
+import datetime
+import pytz
 TIME_ZONE_ID = 'Asia/Tokyo'
 LOCALE = 'ja-JP'
-
-## date
 today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 
-# garbagecollection time limit
+# ごみ収集時間
 time_limit = datetime.time(8,30) # 札幌市はAM8:30までにごみを出す
 
-# trash info
+# ごみに関する情報を処理するクラス
+from ward_calendarnumber import ComfirmWard,CalendarNoInWard
+from trashinfo import TrashInfo
 trash_info = TrashInfo()
 
+from ask_sdk.standard import StandardSkillBuilder
+sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
+
+# 各インテントの処理
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
-    """Handler for Skill Launch."""
+    """スキル起動時"""
+    """初期設定済の場合は今日のごみを教えてくれる（定型アクション向け）"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
     user_info = handler_input.attributes_manager.persistent_attributes
@@ -57,7 +59,7 @@ def launch_request_handler(handler_input):
     # 初期設定が終わっていないなら設定してもらう
     if not user_info:
         return (
-            rb.speak(msg['guidance'])
+            rb.speak(msg['guidance']).ask(msg['ward_you_live'])
             .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
             .set_should_end_session(False).response
         )
@@ -80,18 +82,11 @@ def launch_request_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectWardIntent"))
 def select_ward_intent_handler(handler_input):
-    """Handler for select ward Intent."""
+    """初期設定時に区を設定するためのインテント"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     ward_is = slots['ward'].value
-#    synonyms = handler_input.request_envelope.request.intent.slots.ward.resolutions.resolutionsPerAuthority[0].values[0].value.name
-#    synonyms = handler_input.request_envelope.request.intent.slots.ward.value
-#    tmp_synonyms = slots['ward'].resolutions
-#    synonyms = tmp_synonyms['resolutions_per_authority']
-#    synonyms = slots['ward'].resolutions.resolutionsPerAuthority[0].values[0].value.name
-#    synonyms = slots['ward']['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['name']
-
     user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
@@ -105,7 +100,6 @@ def select_ward_intent_handler(handler_input):
 
     # 区の設定を保存しカレンダー番号の設定を促す
     input_ward = ComfirmWard(str(ward_is))
-
     if input_ward.is_not_exist:
         return (
             rb.speak(msg['ward_you_live'])
@@ -117,7 +111,7 @@ def select_ward_intent_handler(handler_input):
         session_attr['ward_name_alpha'] = input_ward.alpha_name
 
         return (
-            rb.speak(msg['calendar_no']).ask(msg['calendar_no'])
+            rb.speak(msg['calendar_no']).ask(msg['ask_calendar_no'])
             .set_card(SimpleCard(msg['initial_setting'], msg['calendar_no']))
             .set_should_end_session(False).response
         )
@@ -125,7 +119,7 @@ def select_ward_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("SelectCalendarIntent"))
 def select_calendarno_intent_handler(handler_input):
-    """Handler for select calendar number Intent."""
+    """初期設定時にカレンダー番号を設定するためのインテント"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
@@ -147,7 +141,7 @@ def select_calendarno_intent_handler(handler_input):
     ward_calendar_number = CalendarNoInWard(ward_alpha)   
     if ward_calendar_number.is_not_exist(number_is):
         return (
-            rb.speak(msg['req_correct_number'])
+            rb.speak(msg['req_correct_number']).ask(msg['ask_calendar_no'])
             .set_card(SimpleCard(msg['initial_setting'], msg['req_correct_number']))
             .set_should_end_session(False).response
         )
@@ -165,7 +159,7 @@ def select_calendarno_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.YesIntent"))
 def yes_intent_handler(handler_input):
-    """Handler for Yes Intent."""
+    """AMAZON.YesIntentの処理"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
     user_info = handler_input.attributes_manager.persistent_attributes
@@ -248,7 +242,7 @@ def yes_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.NoIntent"))
 def yes_intent_handler(handler_input):
-    """Handler for No Intent."""
+    """AMAZON.NoIntentの処理"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
     user_info = handler_input.attributes_manager.persistent_attributes
@@ -281,7 +275,7 @@ def yes_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("WhatTrashDayIntent"))
 def help_intent_handler(handler_input):
-    """Handler for what trash day Intent."""
+    """指定日のごみを教えるインテント"""
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     date = slots['when'].value
@@ -319,7 +313,7 @@ def help_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("NextWhenTrashDayIntent"))
 def help_intent_handler(handler_input):
-    """Handler for next when trash day Intent."""
+    """聞いたごみを次の収集日を教えるインテント"""
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     trash_name = slots['trash'].value
@@ -342,7 +336,7 @@ def help_intent_handler(handler_input):
 
         # 当日の収集時間を超えていたら
         if today == next_trash_day and now > time_limit:
-            speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
+            speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は、"
         else:
             speech_text = f"{official_trash_name}は、"
 
@@ -355,7 +349,7 @@ def help_intent_handler(handler_input):
 
         # リマインドするかユーザへ聞く
         session_attr['reminder'] = 'can set'
-        speech_text += f"その日の朝にお知らせしましょうか？"
+        speech_text += "その日の朝にお知らせしましょうか？"
 
         return (
             rb.speak(speech_text)
@@ -366,7 +360,7 @@ def help_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.HelpIntent"))
 def help_intent_handler(handler_input):
-    """Handler for Help Intent."""
+    """AMAZON.HelpIntentの処理"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
 
@@ -382,7 +376,7 @@ def help_intent_handler(handler_input):
         is_intent_name("AMAZON.CancelIntent")(handler_input) or
         is_intent_name("AMAZON.StopIntent")(handler_input))
 def cancel_and_stop_intent_handler(handler_input):
-    """Single handler for Cancel and Stop Intent."""
+    """キャンセル処理"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
 
@@ -391,7 +385,7 @@ def cancel_and_stop_intent_handler(handler_input):
 
 @sb.request_handler(can_handle_func=is_request_type("SessionEndedRequest"))
 def session_ended_request_handler(handler_input):
-    """Handler for Session End."""
+    """セッション終了処理"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
 
@@ -400,9 +394,7 @@ def session_ended_request_handler(handler_input):
 
 @sb.exception_handler(can_handle_func=lambda i, e: True)
 def all_exception_handler(handler_input, exception):
-    """Catch all exception handler, log exception and
-    respond with custom message.
-    """
+    """例外処理"""
     # type: (HandlerInput, Exception) -> Response
     rb = handler_input.response_builder
     logger.error(exception, exc_info=True)
