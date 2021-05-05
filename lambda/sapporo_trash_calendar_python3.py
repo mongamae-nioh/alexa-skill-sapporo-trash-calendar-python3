@@ -25,10 +25,10 @@ from ask_sdk_model.services.reminder_management import (
     PushNotificationStatus, ReminderResponse, AlertInfoSpokenInfo, SpokenText)
 from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
 
-import boto3
-from boto3.dynamodb.conditions import Key, Attr
-dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
-table = dynamodb.Table('SapporoTrashCalendar')
+#import boto3
+#from boto3.dynamodb.conditions import Key, Attr
+#dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
+#table = dynamodb.Table('SapporoTrashCalendar')
 
 from ask_sdk.standard import StandardSkillBuilder
 sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
@@ -60,22 +60,18 @@ def launch_request_handler(handler_input):
     """Handler for Skill Launch."""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
-    configured = handler_input.attributes_manager.persistent_attributes
-    # 初期設定が終わっていない場合
-    if not configured:
-        speech_text = msg['text']['1']
-        card_title = msg['card_title']['1']
-        card_body =  msg['card_body']['1']
+    user_info = handler_input.attributes_manager.persistent_attributes
 
+    # 初期設定が終わっていないなら設定してもらう
+    if not user_info:
         return (
-            rb.speak(speech_text)
-            .set_card(SimpleCard(card_title, card_body))
-            .set_should_end_session(False)
-            .response
+            rb.speak(msg['guidance'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
+            .set_should_end_session(False).response
         )
     else:
         today_str = str(today)
-        collection_area = configured['ward_calno']
+        collection_area = user_info['ward_calno']
         trash_name = trash_info.what_day(today_str, collection_area)
 
         if trash_name == '収集なし':
@@ -97,50 +93,41 @@ def select_ward_intent_handler(handler_input):
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     ward_is = slots['ward'].value
-#    synonyms = slots['ward']['resolutions']['resolutionsPerAuthority']['values']['value'].name
-#    synonyms = slots['ward'].resolutions['resolutionsPerAuthority']
-#    synonyms2 = synonyms['resolutions_per_authority']
-    attr = handler_input.attributes_manager.persistent_attributes
+#    synonyms = handler_input.request_envelope.request.intent.slots.ward.resolutions.resolutionsPerAuthority[0].values[0].value.name
+#    synonyms = handler_input.request_envelope.request.intent.slots.ward.value
+#    tmp_synonyms = slots['ward'].resolutions
+#    synonyms = tmp_synonyms['resolutions_per_authority']
+#    synonyms = slots['ward'].resolutions.resolutionsPerAuthority[0].values[0].value.name
+#    synonyms = slots['ward']['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['name']
+
+    user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
-    # 初期設定済で区名を言われたとき
-    if 'ward_calno' in attr:
-        text = msg['text']['2']
-        card_title = msg['card_title']['2']
-        card_body = msg['card_body']['2']
-            
+    # 初期設定済の場合は使い方のガイダンスを流す
+    if 'ward_calno' in user_info:
         return (
-            rb
-            .speak(text)
-            .set_card(SimpleCard(card_title, card_body))
-            .set_should_end_session(False)
-            .response
+            rb.speak(msg['what_or_when'])
+            .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
+            .set_should_end_session(False).response
         )
 
-    # 区の設定
+    # 区の設定を保存しカレンダー番号の設定を促す
     input_ward = ComfirmWard(str(ward_is))
-    if input_ward.is_not_exist:
-        text = msg['text']['3']
-        card_title = msg['card_title']['1']
 
+    if input_ward.is_not_exist:
         return (
-            rb
-            .speak(text)
-            .set_card(SimpleCard(card_title, text))
-            .set_should_end_session(False)
-            .response
+            rb.speak(msg['ward_you_live'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
+            .set_should_end_session(False).response
         )
     else:
         session_attr['ward'] = ward_is
         session_attr['ward_name_alpha'] = input_ward.alpha_name
-        text = msg['text']['4']
 
         return (
-            rb
-            .speak(text)
-            .ask(text)
-            .set_should_end_session(False)
-            .response
+            rb.speak(msg['calendar_no']).ask(msg['calendar_no'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['calendar_no']))
+            .set_should_end_session(False).response
         )
 
 
@@ -151,36 +138,26 @@ def select_calendarno_intent_handler(handler_input):
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     number_is = slots['calendar_number'].value
-    attr = handler_input.attributes_manager.persistent_attributes
+    user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
     ward_kanji = session_attr['ward']
     ward_alpha = session_attr['ward_name_alpha']
 
-    if 'ward_calno' in attr:
-        text = msg['text']['2']
-        card_title = msg['card_title']['2']
-        card_body = msg['card_body']['2']
-            
+    # 初期設定済の場合は使い方のガイダンスを流す
+    if 'ward_calno' in user_info:
         return (
-            rb
-            .speak(text)
-            .ask(text)
-            .set_should_end_session(False)
-            .response
+            rb.speak(msg['what_or_when'])
+            .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
+            .set_should_end_session(False).response
         )
 
-    ward_calendar_number = CalendarNoInWard(ward_alpha)
-    
+    # カレンダー番号を保存して最終確認を促す
+    ward_calendar_number = CalendarNoInWard(ward_alpha)   
     if ward_calendar_number.is_not_exist(number_is):
-        text = msg['err']['1']
-        card_title = msg['card_title']['1']
-
         return (
-            rb
-            .speak(text)
-            .set_card(SimpleCard(card_title, text))
-            .set_should_end_session(False)
-            .response
+            rb.speak(msg['req_correct_number'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['req_correct_number']))
+            .set_should_end_session(False).response
         )
     else:
         speech_text = f"おすまいは{ward_kanji}、カレンダー番号は{number_is}番です。よろしいですか?"
@@ -188,9 +165,8 @@ def select_calendarno_intent_handler(handler_input):
         session_attr['reminder'] = 'no'
 
         return (
-            rb
-            .speak(speech_text)
-            .ask(speech_text)
+            rb.speak(speech_text).ask(speech_text)
+            .set_card(SimpleCard(msg['initial_setting'], msg['confirm']))
             .response
         )
 
@@ -200,21 +176,19 @@ def yes_intent_handler(handler_input):
     """Handler for Yes Intent."""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
-    attr = handler_input.attributes_manager.persistent_attributes
+    user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
-    # set reminder
+    # Alexaアプリでリマインダー許可していなければ案内を、でなければリマインダーを設定する
     if session_attr['reminder'] == 'can set':
         request_envelope = handler_input.request_envelope
         permissions = request_envelope.context.system.user.permissions
-
         # no permission
         if not (permissions and permissions.consent_token):
             logger.info("リマインダーをセットできる権限がありません")
             
             return (
-                rb
-                .speak("お知らせをセットできませんでした。アレクサアプリを起動して、札幌ごみなげカレンダーのスキルから設定を押し、リマインダーを許可してください。")
+                rb.speak(msg['req_reminder'])
                 .set_card(AskForPermissionsConsentCard(permissions=REQUIRED_PERMISSIONS))
                 .response
             )
@@ -238,40 +212,46 @@ def yes_intent_handler(handler_input):
             speech_text = "当日の午前8時にリマインダーを設定しました。"
 
             logger.info(f"Created reminder : {reminder_response}")
-            return rb.speak(speech_text).set_card(
-                SimpleCard(
-                    "設定完了", "当日の朝8時にお知らせします")).response
 
+            return (
+                rb.speak(speech_text)
+                .set_card(SimpleCard("設定完了", "当日の朝8時にお知らせします"))
+                .response
+            )
         except ServiceException as e:
             logger.info(f"Exception encountered : {e.body}")
-            speech_text = "申し訳ありません。エラーが発生しました。"
-            return rb.speak(speech_text).set_card(
-                SimpleCard(
-                    "Reminder not created",str(e.body))).response
 
-    if 'ward_calno' in attr:
-        speech_text = msg['text']['2']
-        card_title = msg['card_title']['2']
-        card_body = msg['card_body']['2']
-            
-        return rb.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+            return (
+                rb.speak(msg['error_occurred'])
+                .set_card(SimpleCard("Reminder not created",str(e.body)))
+                .response
+            )
 
-    if session_attr['ward_calno']:
-        speech_text = msg['text']['5']
-        card_title = msg['card_title']['2']
-        card_body = msg['card_body']['2']
-            
+    # 初期設定済の場合は使い方のガイダンスを流す
+    if 'ward_calno' in user_info:
+        return (
+            rb.speak(msg['what_or_when'])
+            .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
+            .set_should_end_session(False).response
+        )
+
+    # 初期設定完了
+    if session_attr['ward_calno']:          
         # セッション情報をpersistentへ書き込み
         handler_input.attributes_manager.persistent_attributes = session_attr
         handler_input.attributes_manager.save_persistent_attributes()
 
-        return rb.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+        return (
+            rb.speak(msg['configured'])
+            .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
+            .set_should_end_session(False).response
+        )
     else:
-        speech_text = msg['text']['1']
-        card_title = msg['card_title']['1']
-        card_body = msg['card_body']['1']
-
-        return rb.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+        return (
+            rb.speak(msg['guidance'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
+            .set_should_end_session(False).response
+        )
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.NoIntent"))
@@ -279,32 +259,32 @@ def yes_intent_handler(handler_input):
     """Handler for No Intent."""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
-    attr = handler_input.attributes_manager.persistent_attributes
+    user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
+    # リマインドはいらないというリクエストの時
     if session_attr['reminder'] == 'can set':
         speech_text = 'わかりました'
         return rb.speak(speech_text).response
 
-    if session_attr['ward_calno'] in attr:
-        speech_text = msg['text']['2']
-        card_title = msg['card_title']['2']
-        card_body = msg['card_body']['2']
-
-        return rb.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
-
-    if not attr:
+    # 初期設定が済んでいない場合はアトリビュートをクリアして設定ガイダンスを流す
+    if not user_info:        
         session_attr['ward'] = ''
         session_attr['ward_name_alpha'] = ''
         session_attr['ward_calno'] = ''
-        speech_text = msg['text']['1']
-        card_title = msg['card_title']['1']
-        card_body = msg['card_body']['1']
 
-        return rb.speak(speech_text).set_card(SimpleCard(card_title, card_body)).set_should_end_session(False).response
+        return (
+            rb.speak(msg['guidance'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
+            .set_should_end_session(False).response
+        )
+    # どこにもつながらない「No」をキャッチしたら使い方のガイダンスを流す
     else:
-        speech_text = msg['text']['2']
-        return rb.speak(speech_text).set_should_end_session(False).response
+        return (
+            rb.speak(msg['what_or_when'])
+            .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
+            .set_should_end_session(False).response
+        )
 
 
 @sb.request_handler(can_handle_func=is_intent_name("WhatTrashDayIntent"))
@@ -313,31 +293,28 @@ def help_intent_handler(handler_input):
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     date = slots['when'].value
-    attr = handler_input.attributes_manager.persistent_attributes
+    user_info = handler_input.attributes_manager.persistent_attributes
     listen_day = datetime.datetime.strptime(date, '%Y-%m-%d').date()
     monthday = trash_info.japanese_date(listen_day)
 
-    # 初期設定が終わっていない場合
-    if not attr:
-        speech_text = msg['text']['1']
-        card_title = msg['card_title']['1']
-        card_body = msg['card_body']['1']
-            
+    # 初期設定が終わっていないなら設定してもらう
+    if not user_info:
         return (
-            rb.speak(speech_text)
-            .set_card(SimpleCard(card_title, card_body))
+            rb.speak(msg['guidance'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
             .set_should_end_session(False).response
         )
     else:
-        collection_area = attr['ward_calno']
+        collection_area = user_info['ward_calno']
         trash_name = trash_info.what_day(date, collection_area)
-
+        
         if trash_name == '収集なし':
             speech_text = 'ごみの収集はありません。'
         else:
             now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
             speech_text = f"{trash_name}の日です。"
 
+            # 当日の収集時間を超えていたら
             if listen_day == today and now > time_limit:
                 speech_text += 'なお、ごみを出せるのは当日の朝8時半までです。'
 
@@ -354,26 +331,24 @@ def help_intent_handler(handler_input):
     rb = handler_input.response_builder
     slots = handler_input.request_envelope.request.intent.slots
     trash_name = slots['trash'].value
-    attr = handler_input.attributes_manager.persistent_attributes
+    user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
-    if not attr:
-        speech_text = msg['text']['1']
-        card_title = msg['card_title']['1']
-        card_body = msg['card_body']['1']
-            
+    # 初期設定が終わっていないなら設定してもらう
+    if not user_info:          
         return (
-            rb.speak(speech_text)
-            .set_card(SimpleCard(card_title, card_body))
+            rb.speak(msg['guidance'])
+            .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
             .set_should_end_session(False).response
         )
     else:
-        collection_area = attr['ward_calno']
+        collection_area = user_info['ward_calno']
         day_obj = trash_info.next_day(trash_name, collection_area)
         next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
         now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
         official_trash_name = trash_info.official_name(trash_name)
 
+        # 当日の収集時間を超えていたら
         if today == next_trash_day and now > time_limit:
             speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は"
         else:
@@ -386,7 +361,7 @@ def help_intent_handler(handler_input):
         session_attr['trash_name'] = official_trash_name
         session_attr['next_time'] = next_trash_day
 
-        # set reminder 
+        # リマインドするかユーザへ聞く
         session_attr['reminder'] = 'can set'
         speech_text += f"その日の朝にお知らせしましょうか？"
 
@@ -402,11 +377,12 @@ def help_intent_handler(handler_input):
     """Handler for Help Intent."""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
-    speech_text = msg['help']['1']
-    card_title = msg['card_title']['2']
-    card_body = msg['card_body']['2']
 
-    return rb.speak(speech_text).set_card(SimpleCard(card_title, card_body)).response
+    return (
+        rb.speak(msg['how_to_use'])
+        .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
+        .response
+    )
 
 
 @sb.request_handler(
@@ -417,15 +393,16 @@ def cancel_and_stop_intent_handler(handler_input):
     """Single handler for Cancel and Stop Intent."""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
-    speech_text = "わかりました"
 
-    return rb.speak(speech_text).response
+    return rb.speak("わかりました").response
+
 
 @sb.request_handler(can_handle_func=is_request_type("SessionEndedRequest"))
 def session_ended_request_handler(handler_input):
     """Handler for Session End."""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
+
     return rb.response
 
 
@@ -437,9 +414,7 @@ def all_exception_handler(handler_input, exception):
     # type: (HandlerInput, Exception) -> Response
     rb = handler_input.response_builder
     logger.error(exception, exc_info=True)
-
-    speech_text = msg['err']['2']
-    rb.speak(speech_text).ask(speech_text)
+    rb.speak(msg['pardon']).ask(msg['pardon'])
 
     return handler_input.response_builder.response
 

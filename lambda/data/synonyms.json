@@ -1,0 +1,26 @@
+{
+    "slots": {
+        "ward": {
+            "name": "ward",
+            "value": "清田",
+            "resolutions": {
+                "resolutionsPerAuthority": [
+                    {
+                        "authority": "amzn1.er-authority.echo-sdk.amzn1.ask.skill.f231b8df-d053-48d3-8d8f-592c74fecdba.ward",
+                        "status": {
+                            "code": "ER_SUCCESS_MATCH"
+                        },
+                        "values": [
+                            {
+                                "value": {
+                                    "name": "清田区",
+                                    "id": "eab4a7e2ab8af7761f33892f9036be37"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}
