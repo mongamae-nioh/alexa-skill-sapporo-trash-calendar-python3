@@ -1,10 +1,5 @@
-#from ask_sdk_core.handler_input import HandlerInput
-#from ask_sdk_model import Response
-
 import datetime
-import dayoftheweek_to_youbi
 import pytz
-#import trashinfo
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
@@ -20,8 +15,6 @@ dayoftheweek_json = open('./data/dayoftheweek.json', 'r')
 dayoftheweek_data = json.load(dayoftheweek_json)
 
 # variable
-## for reminder
-REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
 TIME_ZONE_ID = 'Asia/Tokyo'
 LOCALE = 'ja-JP'
 
@@ -30,7 +23,6 @@ today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 
 # garbagecollection time limit
 time_limit = datetime.time(8,30) # AM8:30
-
 
 class TrashInfo:
     def what_day(self, day: str, area: str) -> str:
@@ -71,5 +63,6 @@ class TrashInfo:
         day = date.day
         return str(month) + "月" + str(day) + "日"
 
-    def convert_to_youbi(self, engish: str) -> str:
+    def japanese_dayoftheweek(self, date: datetime.date) -> str:
+        engish = date.strftime("%A")
         return dayoftheweek_data[engish]

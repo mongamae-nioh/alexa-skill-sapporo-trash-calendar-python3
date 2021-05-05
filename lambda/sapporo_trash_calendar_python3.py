@@ -11,11 +11,8 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model import Response
 import datetime
 from ward_calendarnumber import ComfirmWard,CalendarNoInWard
-import trashinfo
-import dayoftheweek_to_youbi
 import json
 import pytz
-
 from trashinfo import TrashInfo
 
 # for reminder
@@ -24,11 +21,6 @@ from ask_sdk_model.services.reminder_management import (
     ReminderRequest, Trigger, TriggerType, AlertInfo, PushNotification,
     PushNotificationStatus, ReminderResponse, AlertInfoSpokenInfo, SpokenText)
 from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
-
-#import boto3
-#from boto3.dynamodb.conditions import Key, Attr
-#dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-1')
-#table = dynamodb.Table('SapporoTrashCalendar')
 
 from ask_sdk.standard import StandardSkillBuilder
 sb = StandardSkillBuilder(table_name="SapporoTrash", auto_create_table=False)
@@ -355,7 +347,7 @@ def help_intent_handler(handler_input):
             speech_text = f"{official_trash_name}は、"
 
         monthday = trash_info.japanese_date(next_trash_day)
-        youbi = dayoftheweek_to_youbi.convert(next_trash_day)
+        youbi = trash_info.japanese_dayoftheweek(next_trash_day)
         speech_text += f"{monthday}、{youbi}です。"
 
         session_attr['trash_name'] = official_trash_name

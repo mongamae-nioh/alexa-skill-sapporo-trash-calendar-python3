@@ -5,10 +5,15 @@ convert_dict = {
     "東区": "higashi",
     "西区": "nishi",
     "豊平区": "toyohira",
+    "豊平": "toyohira",
     "厚別区": "atsubetsu",
+    "厚別": "atsubetsu",
     "清田区": "kiyota",
+    "清田": "kiyota",
     "手稲区": "teine",
-    "白石区": "shiroishi"
+    "手稲": "teine",
+    "白石区": "shiroishi",
+    "白石": "shiroishi"
 }
 
 wardcalno = {
