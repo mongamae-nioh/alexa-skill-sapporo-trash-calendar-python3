@@ -23,6 +23,11 @@ from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
 # リマインダーのパーミッション（Alexaの仕様）
 REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
 
+# リマインダーする時間
+# 札幌市は朝8時半までにごみを出すルールのため8時に
+# ユーザが時間指定する機能は複雑になるので実装しない
+remind_time = 'T08:00:00' # AM8:00
+
 # 発話内容は直に書くと見づらくなるので別ファイルとした
 # コードを見れば何を発話するかわかりやすいようにしたつもり
 import json
@@ -182,7 +187,7 @@ def yes_intent_handler(handler_input):
         reminder_client = handler_input.service_client_factory.get_reminder_management_service()
 
         try:
-            request_time = session_attr['next_time'] + 'T08:00:00' # AM8:00 on the day
+            request_time = session_attr['next_time'] + remind_time
             reminder_response = reminder_client.create_reminder(
                 reminder_request=ReminderRequest(
                     trigger=Trigger(
