@@ -14,14 +14,12 @@ trash_data = json.load(trash_json)
 dayoftheweek_json = open('./data/dayoftheweek.json', 'r')
 dayoftheweek_data = json.load(dayoftheweek_json)
 
-# variable
+# タイムゾーンとロケールの設定（デフォルトはUTC）
 TIME_ZONE_ID = 'Asia/Tokyo'
 LOCALE = 'ja-JP'
-
-## date
 today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 
-# garbagecollection time limit
+# ごみ収集時間
 time_limit = datetime.time(8,30) # AM8:30
 
 class TrashInfo:
@@ -34,9 +32,11 @@ class TrashInfo:
         return trash_data['trash_type'][str(trash_number)]
 
     def number(self, trash_name: str) -> int:
+        """ごみの名前からごみ分類番号を返す"""
         return trash_data['trash_number'][trash_name]
 
     def official_name(self, trash_name) -> str:
+        """ごみ分類番号からごみ分類の正式名を返す"""
         trash_number = self.number(trash_name)
         return trash_data['trash_type'][str(trash_number)]
 
@@ -59,10 +59,12 @@ class TrashInfo:
             return response['Items'][0]['Date'] # this time(yyyy-mm-dd)
 
     def japanese_date(self, date: datetime.date) -> str:
+        """yyyymmddから何月何日へ変換"""
         month = date.month
         day = date.day
         return str(month) + "月" + str(day) + "日"
 
     def japanese_dayoftheweek(self, date: datetime.date) -> str:
+        """英語から日本の曜日へ変換(例:Mon > 月曜日)"""
         engish = date.strftime("%A")
         return dayoftheweek_data[engish]

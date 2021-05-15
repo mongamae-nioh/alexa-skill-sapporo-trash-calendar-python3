@@ -24,8 +24,8 @@ from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
 REQUIRED_PERMISSIONS = ["alexa::alerts:reminders:skill:readwrite"]
 
 # リマインダーする時間
-# 札幌市は朝8時半までにごみを出すルールのため8時に
-# ユーザが時間指定する機能は複雑になるので実装しない
+# 札幌市はAM8:30までにごみを出すルールのため8時にリマインドする
+# ユーザが時間指定できる機能は複雑になるので実装しない
 remind_time = 'T08:00:00' # AM8:00
 
 # 発話内容は直に書くと見づらくなるので別ファイルとした
@@ -34,7 +34,7 @@ import json
 json_open = open('./messages/messages.json', 'r')
 msg = json.load(json_open)
 
-# TZがUTCのため日付がずれる対策
+# タイムゾーンとロケールの設定（デフォルトはUTC）
 import datetime
 import pytz
 TIME_ZONE_ID = 'Asia/Tokyo'
@@ -45,7 +45,7 @@ today = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).date()
 time_limit = datetime.time(8,30) # 札幌市はAM8:30までにごみを出す
 
 # ごみに関する情報を処理するクラス
-from ward_calendarnumber import ComfirmWard,CalendarNoInWard
+from ward_calendarnumber import ComfirmWard,CalendarNumberInWard
 from trashinfo import TrashInfo
 trash_info = TrashInfo()
 
@@ -105,6 +105,7 @@ def select_ward_intent_handler(handler_input):
 
     # 区の設定を保存しカレンダー番号の設定を促す
     input_ward = ComfirmWard(str(ward_is))
+    # 区の存在チェック
     if input_ward.is_not_exist:
         return (
             rb.speak(msg['ward_you_live'])
@@ -143,8 +144,9 @@ def select_calendarno_intent_handler(handler_input):
         )
 
     # カレンダー番号を保存して最終確認を促す
-    ward_calendar_number = CalendarNoInWard(ward_alpha)   
-    if ward_calendar_number.is_not_exist(number_is):
+    input_calendar_number = CalendarNumberInWard(ward_alpha)
+    # カレンダー番号の存在チェック
+    if input_calendar_number.is_not_exist(number_is):
         return (
             rb.speak(msg['req_correct_number']).ask(msg['ask_calendar_no'])
             .set_card(SimpleCard(msg['initial_setting'], msg['req_correct_number']))
@@ -170,22 +172,19 @@ def yes_intent_handler(handler_input):
     user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
-    # Alexaアプリでリマインダー許可していなければ案内を、でなければリマインダーを設定する
+    # リマインダーの設定
+    # Alexaアプリでリマインダーを許可していなければ案内を、でなければリマインダーを設定する
     if session_attr['reminder'] == 'can set':
         request_envelope = handler_input.request_envelope
         permissions = request_envelope.context.system.user.permissions
-        # no permission
+        # 許可されていない場合
         if not (permissions and permissions.consent_token):
-            logger.info("リマインダーをセットできる権限がありません")
-            
             return (
-                rb.speak(msg['req_reminder'])
+                rb.speak(msg['req_reminder_permission'])
                 .set_card(AskForPermissionsConsentCard(permissions=REQUIRED_PERMISSIONS))
                 .response
             )
-
         reminder_client = handler_input.service_client_factory.get_reminder_management_service()
-
         try:
             request_time = session_attr['next_time'] + remind_time
             reminder_response = reminder_client.create_reminder(
@@ -200,21 +199,17 @@ def yes_intent_handler(handler_input):
                             content=[SpokenText(locale=LOCALE, text=session_attr['trash_name'] + "の収集日です")])),
                     push_notification=PushNotification(
                         status=PushNotificationStatus.ENABLED))) # type: ReminderResponse
-            speech_text = "当日の午前8時にリマインダーを設定しました。"
-
-            logger.info(f"Created reminder : {reminder_response}")
+#            speech_text = msg['set_reminder']
 
             return (
-                rb.speak(speech_text)
-                .set_card(SimpleCard("設定完了", "当日の朝8時にお知らせします"))
+                rb.speak(msg['set_reminder'])
+                .set_card(SimpleCard(msg['setting_done'], msg['reminder_info']))
                 .response
             )
         except ServiceException as e:
-            logger.info(f"Exception encountered : {e.body}")
-
             return (
                 rb.speak(msg['error_occurred'])
-                .set_card(SimpleCard("Reminder not created",str(e.body)))
+                .set_card(SimpleCard("Reminder not created", msg['error_occurred']))
                 .response
             )
 
@@ -341,7 +336,7 @@ def help_intent_handler(handler_input):
 
         # 当日の収集時間を超えていたら
         if today == next_trash_day and now > time_limit:
-            speech_text = f"{official_trash_name}は、今日ですが、収集時間を過ぎています。次は、"
+            speech_text = f"{official_trash_name}の収集日は今日ですが、収集時間を過ぎています。次は、"
         else:
             speech_text = f"{official_trash_name}は、"
 
