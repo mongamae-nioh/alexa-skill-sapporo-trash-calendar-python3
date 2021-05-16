@@ -347,7 +347,7 @@ def help_intent_handler(handler_input):
         official_trash_name = trash_info.official_name(trash_name)
 
         # 収集日が今日かつ収集時間を超えている or それ以外
-        if today == next_trash_day and now > time_limit:
+        if next_trash_day == today and now > time_limit:
             speech_text = f"{official_trash_name}の収集日は今日ですが、収集時間を過ぎています。次は、"
         else:
             speech_text = f"{official_trash_name}は、"
