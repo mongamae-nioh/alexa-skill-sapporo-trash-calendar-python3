@@ -187,7 +187,7 @@ def yes_intent_handler(handler_input):
         reminder_client = handler_input.service_client_factory.get_reminder_management_service()
         try:
             request_time = session_attr['next_time'] + remind_time
-            reminder_response = reminder_client.create_reminder(
+            reminder_client.create_reminder(
                 reminder_request=ReminderRequest(
                     trigger=Trigger(
                         object_type=TriggerType.SCHEDULED_ABSOLUTE,
