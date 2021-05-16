@@ -311,6 +311,7 @@
                 {
                     "name": "AMAZON.YesIntent",
                     "samples": [
+                        "いい",
                         "いいです",
                         "お願い",
                         "お願いします",

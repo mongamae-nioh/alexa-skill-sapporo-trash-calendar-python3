@@ -68,6 +68,7 @@ def launch_request_handler(handler_input):
             .set_card(SimpleCard(msg['initial_setting'], msg['ward_you_live']))
             .set_should_end_session(False).response
         )
+    # （定型アクションで使えるように）初期設定済なら今日のごみを伝える
     else:
         today_str = str(today)
         collection_area = user_info['ward_calno']
@@ -172,8 +173,8 @@ def yes_intent_handler(handler_input):
     user_info = handler_input.attributes_manager.persistent_attributes
     session_attr = handler_input.attributes_manager.session_attributes
 
-    # リマインダーの設定
-    # Alexaアプリでリマインダーを許可していなければ案内を、でなければリマインダーを設定する
+    # 聞いたごみの次の収集日をリマインドするかユーザへ聞く
+    # Alexaアプリでリマインダーを許可していなければ案内する
     if session_attr['reminder'] == 'can set':
         request_envelope = handler_input.request_envelope
         permissions = request_envelope.context.system.user.permissions
@@ -184,11 +185,14 @@ def yes_intent_handler(handler_input):
                 .set_card(AskForPermissionsConsentCard(permissions=REQUIRED_PERMISSIONS))
                 .response
             )
+
+        # 許可されている場合はセット
         reminder_client = handler_input.service_client_factory.get_reminder_management_service()
         try:
             request_time = session_attr['next_time'] + remind_time
             reminder_client.create_reminder(
                 reminder_request=ReminderRequest(
+                    # 絶対時刻でリマインダー設定（例：6月1日の午後7時）
                     trigger=Trigger(
                         object_type=TriggerType.SCHEDULED_ABSOLUTE,
                         scheduled_time=request_time,
@@ -196,10 +200,19 @@ def yes_intent_handler(handler_input):
                         ),
                     alert_info=AlertInfo(
                         spoken_info=AlertInfoSpokenInfo(
-                            content=[SpokenText(locale=LOCALE, text=session_attr['trash_name'] + "の収集日です")])),
+                            content=[SpokenText(
+                                locale=LOCALE,
+                                text=session_attr['trash_name'] + "の収集日です。"
+                                )
+                            ]
+                        )
+                    ),
+                    # プッシュ通知する
                     push_notification=PushNotification(
-                        status=PushNotificationStatus.ENABLED))) # type: ReminderResponse
-#            speech_text = msg['set_reminder']
+                        status=PushNotificationStatus.ENABLED
+                        )
+                    )
+                ) # type: ReminderResponse
 
             return (
                 rb.speak(msg['set_reminder'])
@@ -209,7 +222,7 @@ def yes_intent_handler(handler_input):
         except ServiceException as e:
             return (
                 rb.speak(msg['error_occurred'])
-                .set_card(SimpleCard("Reminder not created", msg['error_occurred']))
+                .set_card(SimpleCard(msg['failed'], msg['error_occurred']))
                 .response
             )
 
@@ -250,7 +263,7 @@ def yes_intent_handler(handler_input):
 
     # リマインドはいらないというリクエストの時
     if session_attr['reminder'] == 'can set':
-        speech_text = 'わかりました'
+        speech_text = msg['understood']
         return rb.speak(speech_text).response
 
     # 初期設定が済んでいない場合はアトリビュートをクリアして設定ガイダンスを流す
@@ -302,7 +315,7 @@ def help_intent_handler(handler_input):
 
             # 当日の収集時間を超えていたら
             if listen_day == today and now > time_limit:
-                speech_text += 'なお、ごみを出せるのは当日の朝8時半までです。'
+                speech_text += 'なお' + msg['time_limit']
 
         return (
             rb.speak(speech_text)
@@ -334,7 +347,7 @@ def help_intent_handler(handler_input):
         now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
         official_trash_name = trash_info.official_name(trash_name)
 
-        # 当日の収集時間を超えていたら
+        # 収集日が今日かつ収集時間を超えている or それ以外
         if today == next_trash_day and now > time_limit:
             speech_text = f"{official_trash_name}の収集日は今日ですが、収集時間を過ぎています。次は、"
         else:
@@ -347,9 +360,9 @@ def help_intent_handler(handler_input):
         session_attr['trash_name'] = official_trash_name
         session_attr['next_time'] = next_trash_day
 
-        # リマインドするかユーザへ聞く
+        # 収集日当日の朝にリマインドするかユーザへ聞く
         session_attr['reminder'] = 'can set'
-        speech_text += "その日の朝にお知らせしましょうか？"
+        speech_text += msg['wanna_set']
 
         return (
             rb.speak(speech_text)
@@ -380,7 +393,7 @@ def cancel_and_stop_intent_handler(handler_input):
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
 
-    return rb.speak("わかりました").response
+    return rb.speak(msg['understood']).response
 
 
 @sb.request_handler(can_handle_func=is_request_type("SessionEndedRequest"))

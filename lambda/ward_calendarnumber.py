@@ -32,7 +32,7 @@ wardcalno = {
 }
 
 class ComfirmWard:
-    def __init__(self, ward:str):
+    def __init__(self, ward: str):
         self.ward = ward
     
     @property
@@ -47,10 +47,10 @@ class ComfirmWard:
         return convert_dict[self.ward]
 
 class CalendarNumberInWard:
-    def __init__(self, ward:str):
+    def __init__(self, ward: str):
         self.ward = ward
     
-    def is_not_exist(self, number:str) -> bool: # Because Alexa recognizes it as a string
+    def is_not_exist(self, number: str) -> bool: # Because Alexa recognizes it as a string
         """区の収集エリアの存在チェック"""
         # リストは0スタートなので1差し引く
         calendar_number = int(number) - 1

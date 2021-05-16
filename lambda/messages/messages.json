@@ -17,5 +17,9 @@
     "confirm": "よろしいですか？",
     "setting_done": "設定完了",
     "set_reminder": "当日の午前8時にリマインダーを設定しました。",
-    "remider_info": "当日の朝8時にお知らせします"
+    "reminder_info": "当日の朝8時にお知らせします",
+    "time_limit": "ごみを出せるのは朝8時半までです。",
+    "understood": "わかりました",
+    "wanna_set": "その日の朝にお知らせしましょうか？",
+    "failed": "エラー"
 }
