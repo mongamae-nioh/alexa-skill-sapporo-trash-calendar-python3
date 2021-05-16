@@ -105,8 +105,8 @@ def select_ward_intent_handler(handler_input):
         )
 
     # 区の設定を保存しカレンダー番号の設定を促す
-    input_ward = ComfirmWard(str(ward_is))
     # 区の存在チェック
+    input_ward = ComfirmWard(str(ward_is))
     if input_ward.is_not_exist:
         return (
             rb.speak(msg['ward_you_live'])
@@ -145,8 +145,8 @@ def select_calendarno_intent_handler(handler_input):
         )
 
     # カレンダー番号を保存して最終確認を促す
-    input_calendar_number = CalendarNumberInWard(ward_alpha)
     # カレンダー番号の存在チェック
+    input_calendar_number = CalendarNumberInWard(ward_alpha)
     if input_calendar_number.is_not_exist(number_is):
         return (
             rb.speak(msg['req_correct_number']).ask(msg['ask_calendar_no'])
@@ -175,7 +175,7 @@ def yes_intent_handler(handler_input):
 
     # 聞いたごみの次の収集日をリマインドするかユーザへ聞く
     # Alexaアプリでリマインダーを許可していなければ案内する
-    if session_attr['reminder'] == 'can set':
+    if session_attr['reminder'] == 'wanna set':
         request_envelope = handler_input.request_envelope
         permissions = request_envelope.context.system.user.permissions
         # 許可されていない場合
@@ -197,7 +197,7 @@ def yes_intent_handler(handler_input):
                         object_type=TriggerType.SCHEDULED_ABSOLUTE,
                         scheduled_time=request_time,
                         time_zone_id=TIME_ZONE_ID
-                        ),
+                    ),
                     alert_info=AlertInfo(
                         spoken_info=AlertInfoSpokenInfo(
                             content=[SpokenText(
@@ -212,8 +212,7 @@ def yes_intent_handler(handler_input):
                         status=PushNotificationStatus.ENABLED
                         )
                     )
-                ) # type: ReminderResponse
-
+                )
             return (
                 rb.speak(msg['set_reminder'])
                 .set_card(SimpleCard(msg['setting_done'], msg['reminder_info']))
@@ -262,7 +261,7 @@ def yes_intent_handler(handler_input):
     session_attr = handler_input.attributes_manager.session_attributes
 
     # リマインドはいらないというリクエストの時
-    if session_attr['reminder'] == 'can set':
+    if session_attr['reminder'] == 'wanna set':
         speech_text = msg['understood']
         return rb.speak(speech_text).response
 
@@ -310,10 +309,10 @@ def help_intent_handler(handler_input):
         if trash_name == '収集なし':
             speech_text = 'ごみの収集はありません。'
         else:
-            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
             speech_text = f"{trash_name}の日です。"
 
-            # 当日の収集時間を超えていたら
+            # 当日の収集時間を超えていたら一言付け加える
+            now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
             if listen_day == today and now > time_limit:
                 speech_text += 'なお' + msg['time_limit']
 
@@ -357,12 +356,13 @@ def help_intent_handler(handler_input):
         youbi = trash_info.japanese_dayoftheweek(next_trash_day)
         speech_text += f"{monthday}、{youbi}です。"
 
+        # 収集日当日の朝にリマインドするかユーザへ聞く
+        session_attr['reminder'] = 'wanna set'
+        speech_text += msg['wanna_set']
+
+        # リマインダー設定時に使うためセッションアトリビュートへ保存
         session_attr['trash_name'] = official_trash_name
         session_attr['next_time'] = next_trash_day
-
-        # 収集日当日の朝にリマインドするかユーザへ聞く
-        session_attr['reminder'] = 'can set'
-        speech_text += msg['wanna_set']
 
         return (
             rb.speak(speech_text)
