@@ -314,7 +314,7 @@ def help_intent_handler(handler_input):
             # 当日の収集時間を超えていたら一言付け加える
             now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
             if listen_day == today and now > time_limit:
-                speech_text += 'なお' + msg['time_limit']
+                speech_text += 'なお、' + msg['time_limit']
 
         return (
             rb.speak(speech_text)
