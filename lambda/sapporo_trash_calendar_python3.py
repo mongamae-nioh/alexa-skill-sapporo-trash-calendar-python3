@@ -253,7 +253,7 @@ def yes_intent_handler(handler_input):
 
 
 @sb.request_handler(can_handle_func=is_intent_name("AMAZON.NoIntent"))
-def yes_intent_handler(handler_input):
+def no_intent_handler(handler_input):
     """AMAZON.NoIntentの処理"""
     # type: (HandlerInput) -> Response
     rb = handler_input.response_builder
@@ -345,6 +345,8 @@ def help_intent_handler(handler_input):
         next_trash_day = datetime.datetime.strptime(day_obj, '%Y-%m-%d').date()
         now = datetime.datetime.now(pytz.timezone(TIME_ZONE_ID)).time()
         official_trash_name = trash_info.official_name(trash_name)
+        monthday = trash_info.japanese_date(next_trash_day)
+        youbi = trash_info.japanese_dayoftheweek(next_trash_day)
 
         # 収集日が今日かつ収集時間を超えている or それ以外
         if next_trash_day == today and now > time_limit:
@@ -352,8 +354,6 @@ def help_intent_handler(handler_input):
         else:
             speech_text = f"{official_trash_name}は、"
 
-        monthday = trash_info.japanese_date(next_trash_day)
-        youbi = trash_info.japanese_dayoftheweek(next_trash_day)
         speech_text += f"{monthday}、{youbi}です。"
 
         # 収集日当日の朝にリマインドするかユーザへ聞く
@@ -380,7 +380,7 @@ def help_intent_handler(handler_input):
     return (
         rb.speak(msg['how_to_use'])
         .set_card(SimpleCard(msg['talk_like_this'], msg['info']))
-        .response
+        .set_should_end_session(False).response
     )
 
 

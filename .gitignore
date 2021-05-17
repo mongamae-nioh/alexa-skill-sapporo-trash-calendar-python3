@@ -6,3 +6,4 @@ instuctions
 lib*
 share
 skill-package/skill.json
+__pycache__
