@@ -114,7 +114,12 @@ def select_ward_intent_handler(handler_input):
             .set_should_end_session(False).response
         )
     else:
-        session_attr['ward'] = ward_is
+        if ward_is == "白石区" or ward_is == "白石":
+            # しらいし区と発話してしまうため
+            session_attr['ward'] = 'しろ石区'
+        else:
+            session_attr['ward'] = ward_is
+
         session_attr['ward_name_alpha'] = input_ward.alpha_name
 
         return (
@@ -135,6 +140,7 @@ def select_calendarno_intent_handler(handler_input):
     session_attr = handler_input.attributes_manager.session_attributes
     ward_kanji = session_attr['ward']
     ward_alpha = session_attr['ward_name_alpha']
+    print(number_is)
 
     # 初期設定済の場合は使い方のガイダンスを流す
     if 'ward_calno' in user_info:

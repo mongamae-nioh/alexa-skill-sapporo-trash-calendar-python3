@@ -19,16 +19,16 @@ convert_dict = {
 
 # 区ごとの収集カレンダー番号
 wardcalno = {
-    "chuo": list(range(1,6)),
-    "kita": list(range(1,6)),
-    "minami": list(range(1,7)),
-    "higashi": list(range(1,6)),
-    "nishi": list(range(1,4)),
-    "toyohira": list(range(1,4)),
-    "atsubetsu": list(range(1,4)),
-    "kiyota": list(range(1,2)),
-    "teine": list(range(1,2)),
-    "shiroishi": list(range(1,4)),
+    "chuo": list(range(1,7)),
+    "kita": list(range(1,7)),
+    "minami": list(range(1,8)),
+    "higashi": list(range(1,7)),
+    "nishi": list(range(1,5)),
+    "toyohira": list(range(1,5)),
+    "atsubetsu": list(range(1,5)),
+    "kiyota": list(range(1,3)),
+    "teine": list(range(1,4)),
+    "shiroishi": list(range(1,5)),
 }
 
 class ComfirmWard:
@@ -52,7 +52,6 @@ class CalendarNumberInWard:
     
     def is_not_exist(self, number: str) -> bool: # Because Alexa recognizes it as a string
         """区の収集エリアの存在チェック"""
-        # リストは0スタートなので1差し引く
-        calendar_number = int(number) - 1
+        calendar_number = int(number)
         if not calendar_number in wardcalno[self.ward]:
             return True
