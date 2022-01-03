@@ -2,7 +2,6 @@
   "askcliResourcesVersion": "2020-03-31",
   "profiles": {
     "default": {
-      "skillId": "",
       "skillMetadata": {
         "src": "./skill-package"
       },
@@ -12,12 +11,12 @@
         }
       },
       "skillInfrastructure": {
+        "type": "@ask-cli/lambda-deployer",
         "userConfig": {
           "runtime": "python3.6",
           "handler": "sapporo_trash_calendar_python3.handler",
           "awsRegion": "ap-northeast-1"
-        },
-        "type": "@ask-cli/lambda-deployer"
+        }
       }
     }
   }

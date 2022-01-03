@@ -1,9 +1,16 @@
-.ask
 .github
 bin
 include
 instuctions
 lib*
 share
-skill-package/skill.json
 __pycache__
+pyvenv.cfg
+
+# Alexa developer consoleで作成するものはgit管理しない
+# ファイルが必要な場合は ask smapi export-package -s {skillId} -g {stage} でローカルにダウンロードする
+skill-package
+
+# ask initで作成されるものはgit管理しない
+.ask
+ask-resources.json
